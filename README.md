@@ -7,6 +7,8 @@ _____
 <p>This C++ application allows users to intuitively track their lineage and familial relationships visually.   
 
 
+Compile with command : <code>make clean && make</code>
+
 There is no further information, yet.</p>
 
 
