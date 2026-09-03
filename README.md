@@ -8,6 +8,7 @@ _____
 
 
 Compile with command : <code>make clean && make</code>
+Run with command : <code>./family_tree.prog</code>
 
 There is no further information, yet.</p>
 
