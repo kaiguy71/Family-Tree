@@ -1,7 +1,7 @@
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic
 TARGET := family_tree.prog
-SOURCES := main.cc person.cc
+SOURCES := main.cc person.cc family_tree.cc server.cc
 OBJECTS := $(SOURCES:.cc=.o)
 
 .PHONY: all clean
@@ -12,7 +12,7 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 	rm -f *.o
 
-%.o: %.cc person.h
+%.o: %.cc person.h family_tree.h server.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:

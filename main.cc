@@ -1,6 +1,8 @@
 #include "person.h"
+#include "family_tree.h"
+#include "server.h"
 #include <iostream>
-#include <memory>
+#include <string>
 #include <vector>
 
 
@@ -15,34 +17,29 @@ using namespace std;
  *      The display functions will show the correct relationships regardless of ID values.
  * @return int 
  */
-int main() {
-    vector<std::unique_ptr<person>> personList;
+int main(int argc, char* argv[]) {
+    FamilyTree tree;
 
-    personList.push_back(std::make_unique<person>("John Doe", "01-01-1950"));
-    personList.push_back(std::make_unique<person>("Jane Doe", "02-02-1952"));
-    personList.push_back(std::make_unique<person>("Michael Doe", "03-03-1975"));
-    personList.push_back(std::make_unique<person>("Sarah Doe", "04-04-1978"));
-    personList.push_back(std::make_unique<person>("Emily Doe", "05-05-2000"));
-    personList.push_back(std::make_unique<person>("James Doe", "06-06-2002"));
-    personList.push_back(std::make_unique<person>("William Doe", "07-07-2025"));
+    if (argc > 1 && std::string(argv[1]) == "--server") {
+        try {
+            const int port = argc > 2 ? std::stoi(argv[2]) : 8080;
+            return runServer(tree, port);
+        } catch (const std::exception& error) {
+            std::cerr << "[fatal] server startup failed: " << error.what() << '\n';
+            return 1;
+        }
+    }
 
-    
-    personList[2]->addChild(personList[4].get(), person::ParentRole::Father);
-    personList[2]->addChild(personList[5].get(), person::ParentRole::Father);
-    personList[3]->addChild(personList[4].get(), person::ParentRole::Mother);
-    personList[3]->addChild(personList[5].get(), person::ParentRole::Mother);
-    personList[6]->addChild(personList[2].get(), person::ParentRole::Father);
-
-    for (const auto& p : personList) {
+    for (const auto& p : tree.people()) {
         p->displayPerson();
     }
 
     std::cout << "\nFamily Tree:\n";
 
     std::vector<person*> people;
-    people.reserve(personList.size());
+    people.reserve(tree.people().size());
 
-    for (const auto& p : personList) {
+    for (const auto& p : tree.people()) {
         people.push_back(p.get());
     }
 

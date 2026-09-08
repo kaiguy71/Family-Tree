@@ -16,6 +16,12 @@ person::~person() {
         mother->removeChildLink(this);
     }
 
+    for (person* spouse : spouses) {
+        if (spouse) {
+            spouse->removeSpouseLink(this);
+        }
+    }
+
     for (person* child : children) {
         if (child->father == this) {
             child->father = nullptr;
@@ -74,6 +80,28 @@ void person::addChild(person* child, ParentRole role) {
     }
 }
 
+void person::addSpouse(person* spouse) {
+    if (!spouse || spouse == this ||
+        std::find(spouses.begin(), spouses.end(), spouse) != spouses.end()) {
+        return;
+    }
+
+    spouses.push_back(spouse);
+    if (std::find(spouse->spouses.begin(), spouse->spouses.end(), this) ==
+        spouse->spouses.end()) {
+        spouse->spouses.push_back(this);
+    }
+}
+
+void person::removeSpouse(person* spouse) {
+    if (!spouse) {
+        return;
+    }
+
+    removeSpouseLink(spouse);
+    spouse->removeSpouseLink(this);
+}
+
 void person::displayPerson() const {
     std::cout << "ID: " << id
               << ", Name: " << name
@@ -85,6 +113,10 @@ void person::displayPerson() const {
 
     if (mother) {
         std::cout << ", Mother: " << mother->name;
+    }
+
+    if (!spouses.empty()) {
+        std::cout << ", Spouse: " << spouses.front()->name;
     }
 
     if (!children.empty()) {
@@ -207,4 +239,10 @@ void person::removeChildLink(person* child) {
     children.erase(
         std::remove(children.begin(), children.end(), child),
         children.end());
+}
+
+void person::removeSpouseLink(person* spouse) {
+    spouses.erase(
+        std::remove(spouses.begin(), spouses.end(), spouse),
+        spouses.end());
 }

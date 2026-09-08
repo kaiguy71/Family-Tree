@@ -35,6 +35,7 @@ private:
     person* father = nullptr;
     person* mother = nullptr;
     std::vector<person*> children;
+    std::vector<person*> spouses;
 
     void displayTreeImpl(
         const std::string& prefix,
@@ -43,6 +44,7 @@ private:
     ) const;
 
     void removeChildLink(person* child);
+    void removeSpouseLink(person* spouse);
 
 public:
     person(std::string name, std::string birthday,
@@ -60,11 +62,17 @@ public:
     person* getFather() const { return father; }
     person* getMother() const { return mother; }
     const std::vector<person*>& getChildren() const { return children; }
+    const std::vector<person*>& getSpouses() const { return spouses; }
     long getId() const { return id; }
+
+    void setName(std::string newName) { name = std::move(newName); }
+    void setBirthday(std::string newBirthday) { birthday = std::move(newBirthday); }
 
     void setFather(person* newFather);
     void setMother(person* newMother);
     void addChild(person* child, ParentRole role);
+    void addSpouse(person* spouse);
+    void removeSpouse(person* spouse);
 
     void displayPerson() const;
     void displayTree(int level = 0) const;
