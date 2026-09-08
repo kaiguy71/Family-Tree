@@ -26,12 +26,14 @@ class person
 {
 public:
     enum class ParentRole { Father, Mother };
+    enum class Gender { Unknown, Male, Female };
 private:
     inline static long nextId = 0; // Static variable to keep track of the next available ID
 
     const long id;
     std::string name;
     std::string birthday;
+    Gender gender = Gender::Unknown;
     person* father = nullptr;
     person* mother = nullptr;
     std::vector<person*> children;
@@ -47,7 +49,7 @@ private:
     void removeSpouseLink(person* spouse);
 
 public:
-    person(std::string name, std::string birthday,
+    person(std::string name, std::string birthday, Gender gender = Gender::Unknown,
            person* father = nullptr, person* mother = nullptr);
 
     person(const person&) = delete;
@@ -59,6 +61,7 @@ public:
 
     const std::string& getName() const { return name; }
     const std::string& getBirthday() const { return birthday; }
+    Gender getGender() const { return gender; }
     person* getFather() const { return father; }
     person* getMother() const { return mother; }
     const std::vector<person*>& getChildren() const { return children; }
@@ -67,6 +70,7 @@ public:
 
     void setName(std::string newName) { name = std::move(newName); }
     void setBirthday(std::string newBirthday) { birthday = std::move(newBirthday); }
+    void setGender(Gender newGender) { gender = newGender; }
 
     void setFather(person* newFather);
     void setMother(person* newMother);

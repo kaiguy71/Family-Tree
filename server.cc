@@ -34,6 +34,14 @@ std::string jsonStringOrEmpty(const std::string& body, const std::string& key) {
     return jsonString(body, key);
 }
 
+person::Gender parseGender(const std::string& value) {
+    return value == "male" ? person::Gender::Male : value == "female" ? person::Gender::Female : person::Gender::Unknown;
+}
+
+const char* genderName(person::Gender gender) {
+    return gender == person::Gender::Male ? "male" : gender == person::Gender::Female ? "female" : "unknown";
+}
+
 long parseLong(const std::string& value) {
     char* end = nullptr;
     const long result = std::strtol(value.c_str(), &end, 10);
@@ -66,6 +74,7 @@ std::string peopleJson(const FamilyTree& tree) {
         output << "{\"id\":" << current->getId()
                << ",\"name\":\"" << jsonEscape(current->getName())
                << "\",\"birthday\":\"" << jsonEscape(current->getBirthday()) << "\""
+               << ",\"gender\":\"" << genderName(current->getGender()) << "\""
                << ",\"father\":" << (current->getFather() ? std::to_string(current->getFather()->getId()) : "null")
                << ",\"mother\":" << (current->getMother() ? std::to_string(current->getMother()->getId()) : "null")
                << ",\"spouses\":[";
@@ -153,18 +162,20 @@ void handleRequest(int client, FamilyTree& tree) {
     } else if (method == "POST" && path == "/api/people") {
         const std::string name = jsonString(body, "name");
         const std::string birthday = jsonString(body, "birthday");
+        const person::Gender gender = parseGender(jsonString(body, "gender"));
         const std::string relation = jsonStringOrEmpty(body, "relation");
         const std::string role = jsonStringOrEmpty(body, "role");
         person* related = tree.find(jsonLong(body, "relatedId"));
         if (name.empty()) respond(client, 400, "application/json", "{\"error\":\"Name is required\"}");
         else if (!relation.empty() && (!related || (relation != "sibling" && relation != "spouse" && relation != "parent" && relation != "child"))) respond(client, 400, "application/json", "{\"error\":\"Invalid relationship\"}");
-        else respond(client, 200, "application/json", "{\"id\":" + std::to_string(tree.addRelatedPerson(name, birthday, related, relation, role)->getId()) + "}");
+        else respond(client, 200, "application/json", "{\"id\":" + std::to_string(tree.addRelatedPerson(name, birthday, gender, related, relation, role)->getId()) + "}");
     } else if ((method == "PATCH" || method == "PUT") && path == "/api/people") {
         person* current = tree.find(jsonLong(body, "id"));
         const std::string name = jsonString(body, "name");
         const std::string birthday = jsonString(body, "birthday");
+        const person::Gender gender = parseGender(jsonString(body, "gender"));
         if (!current || name.empty()) respond(client, 400, "application/json", "{\"error\":\"Invalid person update\"}");
-        else { current->setName(name); current->setBirthday(birthday); respond(client, 200, "application/json", "{\"ok\":true}"); }
+        else { current->setName(name); current->setBirthday(birthday); current->setGender(gender); respond(client, 200, "application/json", "{\"ok\":true}"); }
     } else if (method == "POST" && path == "/api/relationships") {
         person* child = tree.find(jsonLong(body, "childId"));
         person* parent = tree.find(jsonLong(body, "parentId"));

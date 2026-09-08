@@ -1,9 +1,9 @@
 #include "person.h"
 
 
-person::person(std::string name, std::string birthday,
+person::person(std::string name, std::string birthday, Gender gender,
                       person* father, person* mother)
-    : id(nextId++), name(std::move(name)), birthday(std::move(birthday)) {
+    : id(nextId++), name(std::move(name)), birthday(std::move(birthday)), gender(gender) {
     setFather(father);
     setMother(mother);
 }

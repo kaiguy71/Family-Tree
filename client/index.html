@@ -15,6 +15,7 @@
       <div class="avatar" id="avatar">?</div><p class="id-label" id="personId"></p>
       <label>Full name<input id="editName" name="name" required></label>
       <label>Birthday<input id="editBirthday" name="birthday" type="date"></label>
+      <label>Gender<select id="editGender" name="gender"><option value="unknown">Unknown</option><option value="male">Male</option><option value="female">Female</option></select></label>
       <fieldset class="relationship-fields"><legend>Relationships</legend>
         <label>Father<select id="editFather" name="fatherId"></select></label>
         <label>Mother<select id="editMother" name="motherId"></select></label>
@@ -25,15 +26,16 @@
   </aside>
   <main>
     <header class="masthead"><div><p class="kicker">Local family archive / open map</p><h1>Family Tree<span>/</span></h1></div><div class="status"><i></i><span id="statusText">Empty map</span></div></header>
-    <section class="map-header"><div><p class="eyebrow">Family map</p><h2>Begin with one life.</h2></div><p>Click a node to reveal the next branch. The map arranges relationships by generation and keeps family members spaced clearly even when ages are unknown.</p></section>
+    <section class="map-header"><div><p class="eyebrow">Family system</p><h2>Many lives, one orbit.</h2></div><p>People appear as spheres in connected family systems. Children orbit their parents, marriage expands the web, and gender colors each sphere.</p></section>
     <section class="map-shell">
-      <div class="map-tools"><span id="count">0 people</span><span class="map-actions"><button id="clearPeople" type="button">Clear map</button><i class="legend-parent"></i> parent <i class="legend-sibling"></i> sibling <i class="legend-spouse"></i> marriage</span></div>
+      <div class="map-tools"><span id="count">0 people</span><span class="map-actions"><button id="savePeople" type="button">Save map</button><button id="clearPeople" type="button">Clear map</button><i class="legend-male"></i> male <i class="legend-female"></i> female <i class="legend-parent"></i> parent <i class="legend-sibling"></i> sibling <i class="legend-spouse"></i> marriage</span></div>
       <div class="tree-scroll"><div id="treeCanvas" class="tree-canvas"><svg id="connections" aria-hidden="true"></svg><div id="yearBands"></div><div id="peopleList"></div><div id="emptyAdd" class="empty-add"><button id="addFirst" aria-label="Add first person"><span>+</span></button><p>Add first person</p></div><div id="branchActions" class="branch-actions" hidden></div></div></div><button id="addDisconnected" class="ghost-add" type="button" hidden><span>+</span> Add disconnected person</button>
     </section>
     <footer><span>RUN LOCALLY / C++17</span><span>Map changes live in memory until the process closes.</span></footer>
   </main>
-  <dialog id="personDialog"><form id="createForm"><button type="button" class="dialog-close" id="closeDialog" aria-label="Close">x</button><p class="eyebrow" id="createKicker">New person</p><h2 id="createTitle">Add a person</h2><label>Full name<input name="name" required autofocus placeholder="e.g. Alex Doe"></label><label>Birthday<input name="birthday" type="date"></label><input type="hidden" name="relation"><input type="hidden" name="relatedId"><input type="hidden" name="role"><button class="save" type="submit">Add to map <span>+</span></button></form></dialog>
+  <dialog id="personDialog"><form id="createForm"><button type="button" class="dialog-close" id="closeDialog" aria-label="Close">x</button><p class="eyebrow" id="createKicker">New person</p><h2 id="createTitle">Add a person</h2><label>Full name<input name="name" required autofocus placeholder="e.g. Alex Doe"></label><label>Birthday<input name="birthday" type="date"></label><label>Gender<select name="gender"><option value="unknown">Unknown</option><option value="male">Male</option><option value="female">Female</option></select></label><input type="hidden" name="relation"><input type="hidden" name="relatedId"><input type="hidden" name="role"><button class="save" type="submit">Add to map <span>+</span></button></form></dialog>
   <dialog id="loadDialog"><form id="loadForm"><p class="eyebrow">Saved family trees</p><h2>Load a tree</h2><p class="muted">Choose a saved tree from this project.</p><label>Tree<select id="savedTree" name="treename" required></select></label><div class="dialog-actions"><button type="button" class="ghost-add" id="skipLoad">Start empty</button><button class="save" type="submit">Load tree <span>+</span></button></div></form></dialog>
+  <dialog id="saveDialog"><form id="saveForm"><button type="button" class="dialog-close" id="closeSaveDialog" aria-label="Close">x</button><p class="eyebrow">Save family tree</p><h2>Save this map</h2><label>Tree name<input id="saveName" name="treename" required placeholder="e.g. Battistoni family"></label><button class="save" type="submit">Save map <span>+</span></button></form></dialog>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <unordered_map>
 #include <vector>
+#include <sstream>
 
 namespace {
 std::string savePath(const std::string& treename) {
@@ -22,8 +23,8 @@ person* FamilyTree::find(long id) const {
     return nullptr;
 }
 
-person* FamilyTree::addPerson(const std::string& name, const std::string& birthday) {
-    peopleList.push_back(std::make_unique<person>(name, birthday));
+person* FamilyTree::addPerson(const std::string& name, const std::string& birthday, person::Gender gender) {
+    peopleList.push_back(std::make_unique<person>(name, birthday, gender));
     return peopleList.back().get();
 }
 
@@ -37,8 +38,9 @@ bool FamilyTree::save(const std::string& treename) const {
 
     for (const auto& entry : peopleList) {
         const person* current = entry.get();
-        output << current->getId() << ' ' << std::quoted(current->getName()) << ' '
-               << std::quoted(current->getBirthday()) << ' '
+         output << current->getId() << ' ' << std::quoted(current->getName()) << ' '
+             << std::quoted(current->getBirthday()) << ' '
+             << std::quoted(current->getGender() == person::Gender::Male ? "male" : current->getGender() == person::Gender::Female ? "female" : "unknown") << ' '
                << (current->getFather() ? current->getFather()->getId() : -1) << ' '
                << (current->getMother() ? current->getMother()->getId() : -1) << ' '
                << current->getSpouses().size();
@@ -49,23 +51,34 @@ bool FamilyTree::save(const std::string& treename) const {
 }
 
 bool FamilyTree::load(const std::string& treename) {
-    struct Record { long id; std::string name; std::string birthday; long father; long mother; std::vector<long> spouses; };
+    struct Record { long id; std::string name; std::string birthday; std::string gender; long father; long mother; std::vector<long> spouses; };
     std::ifstream input(savePath(treename));
     if (!input) return false;
     std::vector<Record> records;
     Record record;
-    while (input >> record.id >> std::quoted(record.name) >> std::quoted(record.birthday) >> record.father >> record.mother) {
+    std::string line;
+    while (std::getline(input, line)) {
+        if (line.empty()) continue;
+        std::istringstream fields(line);
         std::size_t spouseCount = 0;
-        if (!(input >> spouseCount)) return false;
+        if (fields >> record.id >> std::quoted(record.name) >> std::quoted(record.birthday)
+            >> std::quoted(record.gender) >> record.father >> record.mother >> spouseCount) {
+            // Current format includes gender.
+        } else {
+            fields.clear();
+            fields.str(line);
+            record.gender = "unknown";
+            if (!(fields >> record.id >> std::quoted(record.name) >> std::quoted(record.birthday)
+                  >> record.father >> record.mother >> spouseCount)) return false;
+        }
         record.spouses.resize(spouseCount);
-        for (long& spouse : record.spouses) if (!(input >> spouse)) return false;
+        for (long& spouse : record.spouses) if (!(fields >> spouse)) return false;
         records.push_back(record);
     }
-    if (!input.eof()) return false;
 
     clear();
     std::unordered_map<long, person*> loaded;
-    for (const Record& saved : records) loaded[saved.id] = addPerson(saved.name, saved.birthday);
+    for (const Record& saved : records) { const auto gender = saved.gender == "male" ? person::Gender::Male : saved.gender == "female" ? person::Gender::Female : person::Gender::Unknown; loaded[saved.id] = addPerson(saved.name, saved.birthday, gender); }
     for (const Record& saved : records) {
         person* current = loaded[saved.id];
         if (saved.father != -1 && loaded.count(saved.father)) current->setFather(loaded[saved.father]);
@@ -77,10 +90,11 @@ bool FamilyTree::load(const std::string& treename) {
 
 person* FamilyTree::addRelatedPerson(const std::string& name,
                                       const std::string& birthday,
+                                      person::Gender gender,
                                       person* related,
                                       const std::string& relation,
                                       const std::string& role) {
-    person* created = addPerson(name, birthday);
+    person* created = addPerson(name, birthday, gender);
     if (!related) return created;
 
     if (relation == "spouse") {
