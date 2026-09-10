@@ -1,6 +1,6 @@
 # Family Tree Application
 *Ohio University Computer Science 2026*
-<code> Contributors: Kai Battistoni, Joey, Ethan Claybourb, Abram E, Chayse C </code>
+<code> Contributors: Kai Battistoni, Joey Ruffing, Ethan Claybourn, Abram Easthan, Chayse Collins</code>
 _____
 
 
