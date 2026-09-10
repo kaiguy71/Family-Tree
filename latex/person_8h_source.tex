@@ -1,0 +1,79 @@
+\doxysection{person.\+h}
+\hypertarget{person_8h_source}{}\label{person_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <algorithm>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <unordered\_set>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#ifndef\ PERSON\_H}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#define\ PERSON\_H}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}}
+\DoxyCodeLine{00026\ \{}
+\DoxyCodeLine{00027\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keyword}{enum\ class}\ \mbox{\hyperlink{classperson_a211552f8cfea5726f14f7febd36017de}{ParentRole}}\ \{\ Father,\ Mother\ \};}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keyword}{enum\ class}\ \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}}\ \{\ Unknown,\ Male,\ Female\ \};}
+\DoxyCodeLine{00032\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{long}\ nextId\ =\ 0;\ \textcolor{comment}{//\ Static\ variable\ to\ keep\ track\ of\ the\ next\ available\ ID}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{long}\ id;}
+\DoxyCodeLine{00036\ \ \ \ \ std::string\ name;}
+\DoxyCodeLine{00037\ \ \ \ \ std::string\ birthday;}
+\DoxyCodeLine{00038\ \ \ \ \ \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}}\ gender\ =\ Gender::Unknown;}
+\DoxyCodeLine{00039\ \ \ \ \ \mbox{\hyperlink{classperson}{person}}*\ father\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00040\ \ \ \ \ \mbox{\hyperlink{classperson}{person}}*\ mother\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00041\ \ \ \ \ std::vector<person*>\ children;}
+\DoxyCodeLine{00042\ \ \ \ \ std::vector<person*>\ spouses;}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{void}\ displayTreeImpl(}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::string\&\ prefix,}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::string\&\ branch,}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ std::unordered\_set<const\ person*>\&\ visited}
+\DoxyCodeLine{00048\ \ \ \ \ )\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{void}\ removeChildLink(\mbox{\hyperlink{classperson}{person}}*\ child);}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordtype}{void}\ removeSpouseLink(\mbox{\hyperlink{classperson}{person}}*\ spouse);}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}(std::string\ name,\ std::string\ birthday,\ \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}}\ gender\ =\ Gender::Unknown,}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classperson}{person}}*\ father\ =\ \textcolor{keyword}{nullptr},\ \mbox{\hyperlink{classperson}{person}}*\ mother\ =\ \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{classperson_af87f892e817df170a0fd44019f67d0df}{person}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00068\ \ \ \ \ \mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}\&\ \mbox{\hyperlink{classperson_a83587f55d682471d41033515fa2c3555}{operator=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00070\ \ \ \ \ \mbox{\hyperlink{classperson_a520d66c88b4bf8675fddd4f5112d134a}{person}}(\mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}\&\ \mbox{\hyperlink{classperson_a5db4c7a86626e8949fcd4cc642d3343a}{operator=}}(\mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}\&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00075\ \ \ \ \ \mbox{\hyperlink{classperson_a156f89d776d9c311d23e41dbf8dd88c4}{\string~person}}();}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{keyword}{const}\ std::string\&\ \mbox{\hyperlink{classperson_aefb501404389e59ac19d66033a6ad33e}{getName}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ name;\ \}}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{keyword}{const}\ std::string\&\ \mbox{\hyperlink{classperson_a34ebe98f173f8b2a44f2f4b3bcbff2e7}{getBirthday}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ birthday;\ \}}
+\DoxyCodeLine{00082\ \ \ \ \ \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}}\ \mbox{\hyperlink{classperson_adb881bf5e305377c77ca7971cb2b8f5a}{getGender}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ gender;\ \}}
+\DoxyCodeLine{00084\ \ \ \ \ \mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}*\ \mbox{\hyperlink{classperson_ad20cc58a748aa302373677960c09f420}{getFather}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ father;\ \}}
+\DoxyCodeLine{00086\ \ \ \ \ \mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}}*\ \mbox{\hyperlink{classperson_ac43a93e59228528baf7414ad6127763a}{getMother}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ mother;\ \}}
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keyword}{const}\ std::vector<person*>\&\ \mbox{\hyperlink{classperson_a07280e996b63087f4da124b88c619fcc}{getChildren}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ children;\ \}}
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{keyword}{const}\ std::vector<person*>\&\ \mbox{\hyperlink{classperson_a0eb6d1b35b270bbe33934ca8e741b420}{getSpouses}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ spouses;\ \}}
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordtype}{long}\ \mbox{\hyperlink{classperson_ab5d7de7efbf262b4dedb47578b2239ba}{getId}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ id;\ \}}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_ae57b18c19917deb7d69e13e8bb99cad6}{setName}}(std::string\ newName)\ \{\ name\ =\ std::move(newName);\ \}}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_a9bda8c1c5747b5eadb69ef0da62d7381}{setBirthday}}(std::string\ newBirthday)\ \{\ birthday\ =\ std::move(newBirthday);\ \}}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_a2e0c8dcd79418526ff5bae584ba93991}{setGender}}(\mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}}\ newGender)\ \{\ gender\ =\ newGender;\ \}}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00102\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_a0950eb65b454a3c9726738c48592758a}{setFather}}(\mbox{\hyperlink{classperson}{person}}*\ newFather);}
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_afeda2254a1bc214ff7738d2cdcc66160}{setMother}}(\mbox{\hyperlink{classperson}{person}}*\ newMother);}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_a7f3c246d8fe36e3e5548d379eeafa86a}{addChild}}(\mbox{\hyperlink{classperson}{person}}*\ child,\ \mbox{\hyperlink{classperson_a211552f8cfea5726f14f7febd36017de}{ParentRole}}\ role);}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_a4bdd1b100a27c213467e36f9d97c5f5a}{addSpouse}}(\mbox{\hyperlink{classperson}{person}}*\ spouse);}
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_aa64d12ca4297b5ce2dafc932137b2e41}{removeSpouse}}(\mbox{\hyperlink{classperson}{person}}*\ spouse);}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_ab5dbb026bf21e7cde231bb935e9dedb2}{displayPerson}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00115\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_adc160450495763b33013c9c4b864363e}{displayTree}}(\textcolor{keywordtype}{int}\ level\ =\ 0)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classperson_a4897cc6650456740b88165b99dcbda1d}{displayForest}}(\textcolor{keyword}{const}\ std::vector<person*>\&\ people);}
+\DoxyCodeLine{00119\ \};}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

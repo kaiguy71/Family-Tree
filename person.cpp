@@ -192,6 +192,12 @@ void person::displayForest(const std::vector<person*>& people) {
     }
 }
 
+/**
+ * @brief Recursively prints descendants while preventing cycles and repeats.
+ * @param prefix Indentation accumulated from ancestor branches.
+ * @param branch Branch marker to print before the current person.
+ * @param visited Persons already printed during the traversal.
+ */
 void person::displayTreeImpl(
     const std::string& prefix,
     const std::string& branch,
@@ -235,12 +241,14 @@ void person::displayTreeImpl(
     }
 }
 
+/** @brief Removes a child pointer without changing the child's parent fields. */
 void person::removeChildLink(person* child) {
     children.erase(
         std::remove(children.begin(), children.end(), child),
         children.end());
 }
 
+/** @brief Removes a spouse pointer without performing reciprocal cleanup. */
 void person::removeSpouseLink(person* spouse) {
     spouses.erase(
         std::remove(spouses.begin(), spouses.end(), spouse),

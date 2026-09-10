@@ -1,0 +1,31 @@
+\doxysection{family\+\_\+tree.\+h}
+\hypertarget{family__tree_8h_source}{}\label{family__tree_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ FAMILY\_TREE\_H}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ FAMILY\_TREE\_H}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}person.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classFamilyTree_a43038e5aa39f3977d67629562ade375f}{FamilyTree}}\ \{}
+\DoxyCodeLine{00016\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00017\ \ \ \ \ std::vector<std::unique\_ptr<person>>\ peopleList;}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{classFamilyTree_a43038e5aa39f3977d67629562ade375f}{FamilyTree}}();}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{const}\ std::vector<std::unique\_ptr<person>>\&\ \mbox{\hyperlink{classFamilyTree_aeb92cda009ae6e736c43734e2bb3ff73}{people}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ peopleList;\ \}}
+\DoxyCodeLine{00025\ \ \ \ \ \mbox{\hyperlink{classperson}{person}}*\ \mbox{\hyperlink{classFamilyTree_a5bf166e63bfbdfd150e3fa6362dd91ae}{find}}(\textcolor{keywordtype}{long}\ \textcolor{keywordtype}{id})\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00027\ \ \ \ \ \mbox{\hyperlink{classperson}{person}}*\ \mbox{\hyperlink{classFamilyTree_a74c5cf35c2ab7832eda6c396cbb41e7f}{addPerson}}(\textcolor{keyword}{const}\ std::string\&\ name,\ \textcolor{keyword}{const}\ std::string\&\ birthday,\ \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{person::Gender}}\ gender\ =\ person::Gender::Unknown);}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classFamilyTree_a616620db60c672ce837ecb9b3820480a}{clear}}();}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classFamilyTree_a6f229f73e4c9f281012b42a93653dc4b}{save}}(\textcolor{keyword}{const}\ std::string\&\ treename)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classFamilyTree_a00e8e91d5bcdd6c9b0e437f9bab67575}{load}}(\textcolor{keyword}{const}\ std::string\&\ treename);}
+\DoxyCodeLine{00044\ \ \ \ \ \mbox{\hyperlink{classperson}{person}}*\ \mbox{\hyperlink{classFamilyTree_a4ec60e6937b4321138aa7c59d9654bae}{addRelatedPerson}}(\textcolor{keyword}{const}\ std::string\&\ name,\ \textcolor{keyword}{const}\ std::string\&\ birthday,\ \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{person::Gender}}\ gender,}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classperson}{person}}*\ related,\ \textcolor{keyword}{const}\ std::string\&\ relation,}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::string\&\ role);}
+\DoxyCodeLine{00047\ \};}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

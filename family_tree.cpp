@@ -6,6 +6,7 @@
 #include <sstream>
 
 namespace {
+/** @brief Ensures a tree name has the `.save` persistence extension. */
 std::string savePath(const std::string& treename) {
     return treename.size() >= 5 && treename.substr(treename.size() - 5) == ".save"
         ? treename

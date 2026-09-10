@@ -1,0 +1,22 @@
+\chapter{Family Tree Application }
+\hypertarget{md_README}{}\label{md_README}\index{Family Tree Application@{Family Tree Application}}
+\label{md_README_autotoc_md0}%
+\Hypertarget{md_README_autotoc_md0}%
+
+
+{\itshape Ohio University Computer Science 2026} {\ttfamily  Contributors\+: Kai Battistoni, Joey Ruffing, Ethan Claybourn, Abram Easthan, Chayse Collins} \DoxyHorRuler{0}
+
+
+This C++ application allows users to intuitively track their lineage and familial relationships visually. ~\newline
+
+
+Compile with command \+: {\ttfamily make clean \&\& make} Run with command \+: {\ttfamily ./family\+\_\+tree.prog --server}
+
+To use the local browser interface, run the server and open {\ttfamily \href{http://127.0.0.1:8080}{\texttt{http\+://127.\+0.\+0.\+1\+:8080}}} (do not open {\ttfamily client/index.\+html} as a file). The interface reads and updates the C++ {\ttfamily person} objects directly. Note\+: Use {\ttfamily ./family\+\_\+tree.prog --server 8090} to choose another port.
+
+The map starts empty. Use the plus button to add the first person, then select any person to edit them or add a sibling, parent, child, or spouse branch.
+
+Birthday inputs and gender are optional; when provided, the calendar value influences relative mass, and gender defines sphere color. The graph uses connected family systems with parent-\/centered child orbits. Use Save map to create a named {\ttfamily .save} file, and choose one from the startup \textquotesingle{}loading\textquotesingle{} dialog when reopening the server. The person editor also individuals\textquotesingle{} relationships and data to be edited manually. Use the add button below the graph to create a disconnected person. \doxylink{classFamilyTree}{Family\+Tree} provides plaintext persistence through {\ttfamily save("{}treename"{})} and {\ttfamily load("{}treename"{})}, which use {\ttfamily treename.\+save}. Changes are otherwise held in memory until the server stops.
+
+\DoxyHorRuler{0}
+ \href{kb877325@ohio.edu}{\texttt{{\itshape Email}}} 

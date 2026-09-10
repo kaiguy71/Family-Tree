@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 namespace {
+/** @brief Escapes backslashes and quotes for the server's JSON responses. */
 std::string jsonEscape(const std::string& value) {
     std::string result;
     for (char character : value) {
@@ -21,6 +22,7 @@ std::string jsonEscape(const std::string& value) {
     return result;
 }
 
+/** @brief Extracts a quoted string property from a small JSON request body. */
 std::string jsonString(const std::string& body, const std::string& key) {
     const std::string marker = "\"" + key + "\":\"";
     const std::size_t start = body.find(marker);
@@ -30,30 +32,36 @@ std::string jsonString(const std::string& body, const std::string& key) {
     return valueEnd == std::string::npos ? std::string() : body.substr(valueStart, valueEnd - valueStart);
 }
 
+/** @brief Reads an optional JSON string property, returning an empty string when absent. */
 std::string jsonStringOrEmpty(const std::string& body, const std::string& key) {
     return jsonString(body, key);
 }
 
+/** @brief Converts a gender token received from the browser into the domain enum. */
 person::Gender parseGender(const std::string& value) {
     return value == "male" ? person::Gender::Male : value == "female" ? person::Gender::Female : person::Gender::Unknown;
 }
 
+/** @brief Converts a domain gender enum into the browser's string representation. */
 const char* genderName(person::Gender gender) {
     return gender == person::Gender::Male ? "male" : gender == person::Gender::Female ? "female" : "unknown";
 }
 
+/** @brief Parses a base-10 integer, returning -1 when parsing cannot start. */
 long parseLong(const std::string& value) {
     char* end = nullptr;
     const long result = std::strtol(value.c_str(), &end, 10);
     return end == value.c_str() ? -1 : result;
 }
 
+/** @brief Extracts and parses a numeric JSON property from a request body. */
 long jsonLong(const std::string& body, const std::string& key) {
     const std::string marker = "\"" + key + "\":";
     const std::size_t start = body.find(marker);
     return start == std::string::npos ? -1 : parseLong(body.substr(start + marker.size()));
 }
 
+/** @brief Extracts an unescaped value from a URL query string. */
 std::string queryValue(const std::string& query, const std::string& key) {
     const std::string marker = key + "=";
     const std::size_t start = query.find(marker);
@@ -63,6 +71,7 @@ std::string queryValue(const std::string& query, const std::string& key) {
     return query.substr(valueStart, valueEnd == std::string::npos ? std::string::npos : valueEnd - valueStart);
 }
 
+/** @brief Serializes every person and relationship in a family tree to JSON. */
 std::string peopleJson(const FamilyTree& tree) {
     std::ostringstream output;
     output << "[";
@@ -105,6 +114,7 @@ std::string peopleJson(const FamilyTree& tree) {
     return output.str();
 }
 
+/** @brief Serializes available `.save` files in the working directory to JSON. */
 std::string saveFilesJson() {
     std::ostringstream output;
     output << "[";
@@ -119,6 +129,7 @@ std::string saveFilesJson() {
     return output.str();
 }
 
+/** @brief Sends an HTTP response and logs failed responses to standard error. */
 void respond(int client, int status, const std::string& type, const std::string& body) {
     if (status >= 400) {
         std::cerr << "[server] request failed (" << status << "): " << body << '\n';
@@ -131,6 +142,7 @@ void respond(int client, int status, const std::string& type, const std::string&
     send(client, message.c_str(), message.size(), 0);
 }
 
+/** @brief Parses one client request and dispatches it to the tree or static files. */
 void handleRequest(int client, FamilyTree& tree) {
     char buffer[16384] = {};
     const ssize_t length = recv(client, buffer, sizeof(buffer) - 1, 0);

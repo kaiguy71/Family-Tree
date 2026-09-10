@@ -1,0 +1,150 @@
+\doxysection{person Class Reference}
+\hypertarget{classperson}{}\label{classperson}\index{person@{person}}
+
+
+Represents a person in the family tree.  
+
+
+
+
+{\ttfamily \#include $<$person.\+h$>$}
+
+\doxysubsubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classperson_a211552f8cfea5726f14f7febd36017de}\label{classperson_a211552f8cfea5726f14f7febd36017de} 
+enum class \mbox{\hyperlink{classperson_a211552f8cfea5726f14f7febd36017de}{Parent\+Role}} \{ {\bfseries Father}
+, {\bfseries Mother}
+ \}
+\begin{DoxyCompactList}\small\item\em Identifies which parent role a relationship represents. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a1459fc40b1bfef51c34c1e2a119edcae}\label{classperson_a1459fc40b1bfef51c34c1e2a119edcae} 
+enum class \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}} \{ {\bfseries Unknown}
+, {\bfseries Male}
+, {\bfseries Female}
+ \}
+\begin{DoxyCompactList}\small\item\em Identifies the gender associated with a person. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classperson_a49bac5c1268f4c61a64790a54c53d239}{person}} (std\+::string name, std\+::string birthday, \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}} gender=Gender\+::\+Unknown, \mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}father=nullptr, \mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}mother=nullptr)
+\begin{DoxyCompactList}\small\item\em Creates a person and optionally connects the person to parents. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_af87f892e817df170a0fd44019f67d0df}\label{classperson_af87f892e817df170a0fd44019f67d0df} 
+{\bfseries person} (const \mbox{\hyperlink{classperson}{person}} \&)=delete
+\begin{DoxyCompactList}\small\item\em Disables copying because relationships are represented by raw pointers. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a83587f55d682471d41033515fa2c3555}\label{classperson_a83587f55d682471d41033515fa2c3555} 
+\mbox{\hyperlink{classperson}{person}} \& {\bfseries operator=} (const \mbox{\hyperlink{classperson}{person}} \&)=delete
+\begin{DoxyCompactList}\small\item\em Disables copy assignment for identity-\/bearing person objects. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a520d66c88b4bf8675fddd4f5112d134a}\label{classperson_a520d66c88b4bf8675fddd4f5112d134a} 
+{\bfseries person} (\mbox{\hyperlink{classperson}{person}} \&\&)=delete
+\begin{DoxyCompactList}\small\item\em Disables moving because relationships refer to object addresses. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a5db4c7a86626e8949fcd4cc642d3343a}\label{classperson_a5db4c7a86626e8949fcd4cc642d3343a} 
+\mbox{\hyperlink{classperson}{person}} \& {\bfseries operator=} (\mbox{\hyperlink{classperson}{person}} \&\&)=delete
+\begin{DoxyCompactList}\small\item\em Disables move assignment for identity-\/bearing person objects. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a156f89d776d9c311d23e41dbf8dd88c4}\label{classperson_a156f89d776d9c311d23e41dbf8dd88c4} 
+{\bfseries \texorpdfstring{$\sim$}{\string~}person} ()
+\begin{DoxyCompactList}\small\item\em Disconnects this person from all remaining relationships. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_aefb501404389e59ac19d66033a6ad33e}\label{classperson_aefb501404389e59ac19d66033a6ad33e} 
+const std\+::string \& {\bfseries get\+Name} () const
+\begin{DoxyCompactList}\small\item\em Returns the person\textquotesingle{}s display name. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a34ebe98f173f8b2a44f2f4b3bcbff2e7}\label{classperson_a34ebe98f173f8b2a44f2f4b3bcbff2e7} 
+const std\+::string \& {\bfseries get\+Birthday} () const
+\begin{DoxyCompactList}\small\item\em Returns the stored birthday text. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_adb881bf5e305377c77ca7971cb2b8f5a}\label{classperson_adb881bf5e305377c77ca7971cb2b8f5a} 
+\mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}} {\bfseries get\+Gender} () const
+\begin{DoxyCompactList}\small\item\em Returns the person\textquotesingle{}s gender classification. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_ad20cc58a748aa302373677960c09f420}\label{classperson_ad20cc58a748aa302373677960c09f420} 
+\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} {\bfseries get\+Father} () const
+\begin{DoxyCompactList}\small\item\em Returns the father, or nullptr when none is assigned. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_ac43a93e59228528baf7414ad6127763a}\label{classperson_ac43a93e59228528baf7414ad6127763a} 
+\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} {\bfseries get\+Mother} () const
+\begin{DoxyCompactList}\small\item\em Returns the mother, or nullptr when none is assigned. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a07280e996b63087f4da124b88c619fcc}\label{classperson_a07280e996b63087f4da124b88c619fcc} 
+const std\+::vector$<$ \mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} $>$ \& {\bfseries get\+Children} () const
+\begin{DoxyCompactList}\small\item\em Returns the non-\/owning list of children. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a0eb6d1b35b270bbe33934ca8e741b420}\label{classperson_a0eb6d1b35b270bbe33934ca8e741b420} 
+const std\+::vector$<$ \mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} $>$ \& {\bfseries get\+Spouses} () const
+\begin{DoxyCompactList}\small\item\em Returns the non-\/owning list of spouses. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_ab5d7de7efbf262b4dedb47578b2239ba}\label{classperson_ab5d7de7efbf262b4dedb47578b2239ba} 
+long {\bfseries get\+Id} () const
+\begin{DoxyCompactList}\small\item\em Returns the immutable unique identifier assigned at construction. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_ae57b18c19917deb7d69e13e8bb99cad6}\label{classperson_ae57b18c19917deb7d69e13e8bb99cad6} 
+void {\bfseries set\+Name} (std\+::string new\+Name)
+\begin{DoxyCompactList}\small\item\em Replaces the person\textquotesingle{}s display name. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a9bda8c1c5747b5eadb69ef0da62d7381}\label{classperson_a9bda8c1c5747b5eadb69ef0da62d7381} 
+void {\bfseries set\+Birthday} (std\+::string new\+Birthday)
+\begin{DoxyCompactList}\small\item\em Replaces the stored birthday text. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a2e0c8dcd79418526ff5bae584ba93991}\label{classperson_a2e0c8dcd79418526ff5bae584ba93991} 
+void {\bfseries set\+Gender} (\mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}} new\+Gender)
+\begin{DoxyCompactList}\small\item\em Replaces the person\textquotesingle{}s gender classification. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a0950eb65b454a3c9726738c48592758a}\label{classperson_a0950eb65b454a3c9726738c48592758a} 
+void {\bfseries set\+Father} (\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}new\+Father)
+\begin{DoxyCompactList}\small\item\em Assigns a father and keeps the parent-\/child link bidirectional. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_afeda2254a1bc214ff7738d2cdcc66160}\label{classperson_afeda2254a1bc214ff7738d2cdcc66160} 
+void {\bfseries set\+Mother} (\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}new\+Mother)
+\begin{DoxyCompactList}\small\item\em Assigns a mother and keeps the parent-\/child link bidirectional. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a7f3c246d8fe36e3e5548d379eeafa86a}\label{classperson_a7f3c246d8fe36e3e5548d379eeafa86a} 
+void {\bfseries add\+Child} (\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}child, \mbox{\hyperlink{classperson_a211552f8cfea5726f14f7febd36017de}{Parent\+Role}} role)
+\begin{DoxyCompactList}\small\item\em Adds this person as a child using the requested parent role. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_a4bdd1b100a27c213467e36f9d97c5f5a}\label{classperson_a4bdd1b100a27c213467e36f9d97c5f5a} 
+void {\bfseries add\+Spouse} (\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}spouse)
+\begin{DoxyCompactList}\small\item\em Adds a reciprocal spouse relationship unless it already exists. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_aa64d12ca4297b5ce2dafc932137b2e41}\label{classperson_aa64d12ca4297b5ce2dafc932137b2e41} 
+void {\bfseries remove\+Spouse} (\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}spouse)
+\begin{DoxyCompactList}\small\item\em Removes a reciprocal spouse relationship when present. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_ab5dbb026bf21e7cde231bb935e9dedb2}\label{classperson_ab5dbb026bf21e7cde231bb935e9dedb2} 
+void {\bfseries display\+Person} () const
+\begin{DoxyCompactList}\small\item\em Prints this person\textquotesingle{}s fields and immediate relationships. \end{DoxyCompactList}\item 
+\Hypertarget{classperson_adc160450495763b33013c9c4b864363e}\label{classperson_adc160450495763b33013c9c4b864363e} 
+void {\bfseries display\+Tree} (int level=0) const
+\begin{DoxyCompactList}\small\item\em Prints this person\textquotesingle{}s descendant tree in an indented format. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classperson_a4897cc6650456740b88165b99dcbda1d}\label{classperson_a4897cc6650456740b88165b99dcbda1d} 
+static void {\bfseries display\+Forest} (const std\+::vector$<$ \mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} $>$ \&people)
+\begin{DoxyCompactList}\small\item\em Prints all disconnected and connected family trees in the collection. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Represents a person in the family tree. 
+
+Stores name, birthday, father, mother, and children of the person with appropriate getters and setters. Constructor allows for creating a person with or without parents. Destructor cleans up the children vector.
+
+Uses a static variable to assign unique IDs to each person. Provides methods to display the person\textquotesingle{}s information and the family tree. Operator overloads on the person class are deleted to prevent copying or moving of person objects.
+
+Children are stored as raw pointers, and the parent-\/child relationships are managed through the add\+Child, set\+Father, and set\+Mother methods. Adding a child to a parent automatically sets the parent for the child, and vice versa.
+
+C++17 features are used, including smart pointers and inline member functions. 
+
+\label{doc-constructors}
+\Hypertarget{classperson_doc-constructors}
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{classperson_a49bac5c1268f4c61a64790a54c53d239}\index{person@{person}!person@{person}}
+\index{person@{person}!person@{person}}
+\doxysubsubsection{\texorpdfstring{person()}{person()}}
+{\footnotesize\ttfamily \label{classperson_a49bac5c1268f4c61a64790a54c53d239} 
+person\+::person (\begin{DoxyParamCaption}\item[{std\+::string}]{name}{, }\item[{std\+::string}]{birthday}{, }\item[{\mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender}}}]{gender}{ = {\ttfamily Gender\+:\+:Unknown}, }\item[{\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}}]{father}{ = {\ttfamily nullptr}, }\item[{\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}}]{mother}{ = {\ttfamily nullptr}}\end{DoxyParamCaption})}
+
+
+
+Creates a person and optionally connects the person to parents. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em name} & Display name for the person. \\
+\hline
+{\em birthday} & Birthday text stored for the person. \\
+\hline
+{\em gender} & \doxylink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{Gender} classification used by the application. \\
+\hline
+{\em father} & Optional father to connect during construction. \\
+\hline
+{\em mother} & Optional mother to connect during construction. \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+person.\+h\item 
+person.\+cpp\end{DoxyCompactItemize}

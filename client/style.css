@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap');
+.map-actions button[id^="zoom"]{min-width:34px;padding:6px 7px}.tree-scroll{cursor:grab}.tree-scroll:active{cursor:grabbing}
 [hidden]{display:none!important}main{margin-left:0;transition:margin-left .25s ease}.inspector{transform:translateX(-100%);transition:transform .25s ease}.person-selected main{margin-left:280px}.person-selected .inspector{transform:translateX(0)}
 .map-actions button{border:1px solid var(--line);background:transparent;color:var(--muted);padding:6px 9px;font:10px 'DM Mono';text-transform:uppercase;cursor:pointer}.map-actions button:hover{border-color:var(--pink);color:var(--pink)}
 .tree-canvas:before{background:repeating-linear-gradient(to right,transparent 0,transparent 219px,rgba(66,103,131,.24) 220px,transparent 221px)}.tree-canvas #peopleList{grid-auto-rows:110px;column-gap:40px}.year-band{top:0!important;bottom:0;border-top:0;border-left:1px solid rgba(120,145,170,.3);width:1px;height:auto}.year-band span{top:10px;left:7px}.edge-parent{stroke:var(--cyan)}

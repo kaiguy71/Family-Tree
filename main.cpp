@@ -17,6 +17,13 @@ using namespace std;
  *      The display functions will show the correct relationships regardless of ID values.
  * @return int 
  */
+/**
+ * @brief Starts the family tree application or its local HTTP server.
+ * @param argc Number of command-line arguments.
+ * @param argv Command-line arguments; `--server` enables server mode and an
+ * optional second argument selects the port.
+ * @return Server status in server mode, or zero after the console display.
+ */
 int main(int argc, char* argv[]) {
     FamilyTree tree;
 

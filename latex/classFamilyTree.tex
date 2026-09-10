@@ -1,0 +1,81 @@
+\doxysection{Family\+Tree Class Reference}
+\hypertarget{classFamilyTree}{}\label{classFamilyTree}\index{FamilyTree@{FamilyTree}}
+
+
+Owns the people in an application family tree.  
+
+
+
+
+{\ttfamily \#include $<$family\+\_\+tree.\+h$>$}
+
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classFamilyTree_a43038e5aa39f3977d67629562ade375f}\label{classFamilyTree_a43038e5aa39f3977d67629562ade375f} 
+{\bfseries Family\+Tree} ()
+\begin{DoxyCompactList}\small\item\em Creates an empty family tree. \end{DoxyCompactList}\item 
+\Hypertarget{classFamilyTree_aeb92cda009ae6e736c43734e2bb3ff73}\label{classFamilyTree_aeb92cda009ae6e736c43734e2bb3ff73} 
+const std\+::vector$<$ std\+::unique\+\_\+ptr$<$ \mbox{\hyperlink{classperson}{person}} $>$ $>$ \& {\bfseries people} () const
+\begin{DoxyCompactList}\small\item\em Returns the owned people in insertion order. \end{DoxyCompactList}\item 
+\Hypertarget{classFamilyTree_a5bf166e63bfbdfd150e3fa6362dd91ae}\label{classFamilyTree_a5bf166e63bfbdfd150e3fa6362dd91ae} 
+\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} {\bfseries find} (long id) const
+\begin{DoxyCompactList}\small\item\em Finds a person by ID, or returns nullptr when absent. \end{DoxyCompactList}\item 
+\Hypertarget{classFamilyTree_a74c5cf35c2ab7832eda6c396cbb41e7f}\label{classFamilyTree_a74c5cf35c2ab7832eda6c396cbb41e7f} 
+\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} {\bfseries add\+Person} (const std\+::string \&name, const std\+::string \&birthday, \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{person\+::\+Gender}} gender=person\+::\+Gender\+::\+Unknown)
+\begin{DoxyCompactList}\small\item\em Creates and owns an unrelated person. \end{DoxyCompactList}\item 
+\Hypertarget{classFamilyTree_a616620db60c672ce837ecb9b3820480a}\label{classFamilyTree_a616620db60c672ce837ecb9b3820480a} 
+void {\bfseries clear} ()
+\begin{DoxyCompactList}\small\item\em Removes every person and all relationships from the tree. \end{DoxyCompactList}\item 
+\Hypertarget{classFamilyTree_a6f229f73e4c9f281012b42a93653dc4b}\label{classFamilyTree_a6f229f73e4c9f281012b42a93653dc4b} 
+bool {\bfseries save} (const std\+::string \&treename) const
+\begin{DoxyCompactList}\small\item\em Writes the tree to a {\ttfamily .\doxylink{classFamilyTree_a6f229f73e4c9f281012b42a93653dc4b}{save}} file and reports whether it succeeded. \end{DoxyCompactList}\item 
+\Hypertarget{classFamilyTree_a00e8e91d5bcdd6c9b0e437f9bab67575}\label{classFamilyTree_a00e8e91d5bcdd6c9b0e437f9bab67575} 
+bool {\bfseries load} (const std\+::string \&treename)
+\begin{DoxyCompactList}\small\item\em Loads a {\ttfamily .\doxylink{classFamilyTree_a6f229f73e4c9f281012b42a93653dc4b}{save}} file, replacing the current tree on success. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{classFamilyTree_a4ec60e6937b4321138aa7c59d9654bae}{add\+Related\+Person}} (const std\+::string \&name, const std\+::string \&birthday, \mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{person\+::\+Gender}} gender, \mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}related, const std\+::string \&relation, const std\+::string \&role)
+\begin{DoxyCompactList}\small\item\em Creates a person and optionally connects it to an existing person. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Owns the people in an application family tree. 
+
+The tree owns each person with a unique pointer while person objects retain non-\/owning pointers for their relationships. 
+
+\label{doc-func-members}
+\Hypertarget{classFamilyTree_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classFamilyTree_a4ec60e6937b4321138aa7c59d9654bae}\index{FamilyTree@{FamilyTree}!addRelatedPerson@{addRelatedPerson}}
+\index{addRelatedPerson@{addRelatedPerson}!FamilyTree@{FamilyTree}}
+\doxysubsubsection{\texorpdfstring{addRelatedPerson()}{addRelatedPerson()}}
+{\footnotesize\ttfamily \label{classFamilyTree_a4ec60e6937b4321138aa7c59d9654bae} 
+\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*} Family\+Tree\+::add\+Related\+Person (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{name}{, }\item[{const std\+::string \&}]{birthday}{, }\item[{\mbox{\hyperlink{classperson_a1459fc40b1bfef51c34c1e2a119edcae}{person\+::\+Gender}}}]{gender}{, }\item[{\mbox{\hyperlink{classperson}{person}} \texorpdfstring{$\ast$}{*}}]{related}{, }\item[{const std\+::string \&}]{relation}{, }\item[{const std\+::string \&}]{role}{}\end{DoxyParamCaption})}
+
+
+
+Creates a person and optionally connects it to an existing person. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the new person. \\
+\hline
+{\em birthday} & Birthday text for the new person. \\
+\hline
+{\em gender} & Gender classification for the new person. \\
+\hline
+{\em related} & Existing person that anchors the requested relationship. \\
+\hline
+{\em relation} & Relationship type such as {\ttfamily parent}, {\ttfamily child}, {\ttfamily sibling}, or {\ttfamily spouse}. \\
+\hline
+{\em role} & Parent role used when the relationship requires one. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the newly owned person. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+family\+\_\+tree.\+h\item 
+family\+\_\+tree.\+cpp\end{DoxyCompactItemize}
