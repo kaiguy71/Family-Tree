@@ -33,6 +33,16 @@ void FamilyTree::clear() {
     peopleList.clear();
 }
 
+bool FamilyTree::remove(long id) {
+    const auto it = std::find_if(peopleList.begin(), peopleList.end(),
+        [id](const std::unique_ptr<person>& candidate) {
+            return candidate && candidate->getId() == id;
+        });
+    if (it == peopleList.end()) return false;
+    peopleList.erase(it);
+    return true;
+}
+
 bool FamilyTree::save(const std::string& treename) const {
     std::ofstream output(savePath(treename));
     if (!output) return false;
