@@ -30,7 +30,5 @@ create a disconnected person. FamilyTree provides plaintext persistence through
 <code>save("treename")</code> and <code>load("treename")</code>, which use
 <code>treename.save</code>. Changes are otherwise held in memory until the server stops.</p>
 
-This Branch is Joey's Branch
-
 ___
 [*Email*](kb877325@ohio.edu)
