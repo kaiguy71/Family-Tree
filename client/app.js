@@ -416,6 +416,17 @@ function fitToNetwork() {
   const viewportWidth = treeScroll.clientWidth || 1000;
   const viewportHeight = treeScroll.clientHeight || 700;
 
+  if (state.people.length === 1) {
+    const position = state.positions.get(state.people[0].id);
+    if (position) {
+      // Frame the first person closely, leaving room below for branch actions.
+      state.zoom = Math.max(0.35, Math.min(3, (viewportWidth - 80) / 220, (viewportHeight - 80) / 240));
+      state.panX = viewportWidth / 2 - position.x * state.zoom;
+      state.panY = viewportHeight / 2 - (position.y + 35) * state.zoom;
+      return;
+    }
+  }
+
   const scaleX = (viewportWidth - 80) / Math.max(1, bounds.width);
   const scaleY = (viewportHeight - 80) / Math.max(1, bounds.height);
   state.zoom = Math.max(0.35, Math.min(1.8, Math.min(scaleX, scaleY)));
@@ -454,7 +465,7 @@ function placeBranchActions() {
   if (!selectedNode) return;
 
   // Match the selected circle's world size; the canvas supplies zoom scaling.
-  const actionScale = selectedNode.offsetWidth / 132;
+  const actionScale = Math.max(4 / 9, selectedNode.offsetWidth / 132);
   branchActions.style.fontSize = `${20 * actionScale}px`;
   const canvasRect = treeCanvas.getBoundingClientRect();
   const selectedRect = selectedNode.getBoundingClientRect();
@@ -960,7 +971,7 @@ async function refresh() {
         });
       }
     });
-    void previousPeople;
+    if (previousPeople.size === 1 && state.people.length > 1) fitToNetwork();
   }
   render();
 }

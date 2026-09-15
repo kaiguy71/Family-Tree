@@ -38,6 +38,11 @@ main {
   position: fixed;
   inset: 0 auto 0 0;
   width: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--muted) transparent;
+  overscroll-behavior-y: contain;
   background: rgba(5, 15, 22, 0.96);
   border-right: 1px solid var(--line);
   padding: 36px 26px;
