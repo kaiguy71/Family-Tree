@@ -27,6 +27,8 @@ public:
     person* addPerson(const std::string& name, const std::string& birthday, person::Gender gender = person::Gender::Unknown);
     /** @brief Removes every person and all relationships from the tree. */
     void clear();
+    /** @brief Removes one person and disconnects all of their relationships. */
+    bool remove(long id);
     /** @brief Writes the tree to a `.save` file and reports whether it succeeded. */
     bool save(const std::string& treename) const;
     /** @brief Loads a `.save` file, replacing the current tree on success. */

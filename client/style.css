@@ -257,6 +257,15 @@ main {
   box-shadow: 0 0 0 1px rgba(255,255,255,0.28), 0 10px 32px rgba(0, 0, 0, 0.38), 0 0 54px rgba(126,200,255,0.18);
 }
 
+.person.dimmed {
+  opacity: 0.12;
+  filter: saturate(0.15) brightness(0.5);
+}
+
+.edge-dimmed {
+  opacity: 0.08;
+}
+
 .person .planet-core {
   position: absolute;
   inset: 18%;
@@ -365,6 +374,17 @@ main {
   background: rgba(6, 18, 26, 0.9);
   color: var(--ink);
   font-size: 20px;
+  cursor: pointer;
+}
+
+.danger {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 125, 125, 0.55);
+  border-radius: 10px;
+  background: transparent;
+  color: #ff9c9c;
+  padding: 11px 14px;
   cursor: pointer;
 }
 
