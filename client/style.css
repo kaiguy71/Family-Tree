@@ -317,7 +317,10 @@ main {
 }
 
 .planet-year {
-  top: calc(100% + 26px);
+  display: block;
+  position: static;
+  transform: none;
+  margin-top: 3px;
   font-size: 9px;
   color: var(--muted);
   letter-spacing: 0.08em;

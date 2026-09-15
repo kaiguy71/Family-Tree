@@ -66,8 +66,19 @@ function visibleNameIds(orderedPeople, generationMemo) {
       if (!position) return null;
       const generation = getGeneration(person.id, generationMemo);
       const [firstLine, lastLine = ''] = personNameLines(person.name);
-      const width = Math.min(22 * (3 ** generation) * 1.6, Math.max(firstLine.length, lastLine.length) * 7.2 + 8);
-      return { id: person.id, generation, position, width, height: lastLine ? 28 : 16 };
+      const year = yearOf(person);
+      const width = Math.min(
+        22 * (3 ** generation) * 1.6,
+        Math.max(firstLine.length, lastLine.length, year ? String(year).length * 0.85 : 0) * 7.2 + 8
+      );
+      const nameHeight = lastLine ? 28 : 16;
+      return {
+        id: person.id,
+        generation,
+        position,
+        width,
+        height: nameHeight + (state.zoom >= 0.8 && year ? 12 : 0)
+      };
     })
     .filter(Boolean)
     .filter((candidate) => candidate.generation === Math.max(...orderedPeople.map((person) => getGeneration(person.id, generationMemo)))
@@ -397,10 +408,10 @@ function render() {
 
     const year = yearOf(person);
     const [firstName, lastName] = personNameLines(person.name);
+    const showYear = visibleNames.has(person.id) && state.zoom >= 0.8 && year;
     node.innerHTML = `
       <span class="planet-core"></span>
-      <span class="planet-name${visibleNames.has(person.id) ? '' : ' label-hidden'}">${escapeHtml(firstName)}${lastName ? `<br>${escapeHtml(lastName)}` : ''}</span>
-      <span class="planet-year">${year || 'Unknown'}</span>
+      <span class="planet-name${visibleNames.has(person.id) ? '' : ' label-hidden'}">${escapeHtml(firstName)}${lastName ? `<br>${escapeHtml(lastName)}` : ''}${showYear ? `<span class="planet-year">${year}</span>` : ''}</span>
     `;
 
     peopleList.appendChild(node);
