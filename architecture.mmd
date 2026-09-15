@@ -1,0 +1,69 @@
+---
+title: Family Tree Application Architecture and Data Flow (master branch)
+config:
+  layout: elk
+---
+flowchart TB
+    subgraph L1["1. User and Browser"]
+        USER(["User"])
+        HTML["client/index.html<br/>load/save dialog UI"]
+        APPJS["client/app.js<br/>generation-based layout<br/>generationMap · layoutGraph · drawConnections"]
+        CSS["client/style.css"]
+    end
+
+    subgraph L2["2. family_tree.prog · single C++17 binary"]
+        MAIN["main.cpp<br/>console demo mode (no args)<br/>or --server [port] mode"]
+        SRV["server.cpp / server.h<br/>runServer(FamilyTree&, port)<br/>raw BSD sockets · hand-rolled<br/>HTTP/1.1 parser + JSON responses<br/>default port 8080<br/>Access-Control-Allow-Origin: * header"]
+        FT["family_tree.h / .cpp<br/>FamilyTree: std::vector&lt;unique_ptr&lt;person&gt;&gt;<br/>save(treename) / load(treename)"]
+        PERSON["person.h / .cpp<br/>id, name, birthday, gender<br/>father, mother, spouses[], children[]<br/>siblings computed on the fly"]
+    end
+
+    subgraph FILES["3. Flat-file persistence"]
+        SAVE[("treename.save<br/>plaintext snapshot<br/>gitignored")]
+    end
+
+    %% Layer 1 flows
+    USER -->|"GET /"| HTML
+    HTML --> APPJS
+    HTML --> CSS
+    APPJS -->|"fetch() · JSON<br/>no auth header"| SRV
+
+    %% Server internals
+    MAIN -->|"--server flag"| SRV
+    MAIN -->|"no args: displayPerson()<br/>person::displayForest()"| FT
+    SRV --> FT
+    FT --> PERSON
+
+    %% Routes
+    SRV -->|"GET /api/people"| FT
+    SRV -->|"POST /api/people<br/>create + relate: parent/child/sibling/spouse"| FT
+    SRV -->|"PATCH · PUT /api/people<br/>update name/birthday/gender by id"| FT
+    SRV -->|"DELETE /api/people<br/>clear whole tree"| FT
+    SRV -->|"POST /api/relationships<br/>{childId, parentId, role}"| FT
+    SRV -->|"DELETE /api/relationships?childId=&role="| FT
+    SRV -->|"POST /api/marriages<br/>{firstId, secondId}"| FT
+    SRV -->|"DELETE /api/marriages?firstId=&secondId="| FT
+    SRV -->|"GET /api/savefiles<br/>list *.save in cwd"| SAVE
+    SRV -->|"POST /api/save {treename}<br/>200 ok or 400 error"| SAVE
+    SRV -->|"POST /api/load {treename}"| SAVE
+    SRV -->|"fallback GET/HEAD<br/>serve client/&lt;path&gt; from disk"| HTML
+
+    subgraph LEG["Legend"]
+        K1["Browser / static client"]:::frontend
+        K2["C++ process (single binary)"]:::cpp
+        K3["Flat-file storage"]:::files
+    end
+
+    classDef note fill:#FFFFFF,stroke:#94A3B8,color:#334155
+    classDef frontend fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A
+    classDef cpp fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95
+    classDef files fill:#FEF3C7,stroke:#D97706,color:#78350F
+
+    class USER,HTML,APPJS,CSS frontend
+    class MAIN,SRV,FT,PERSON cpp
+    class SAVE files
+
+    style L1 fill:#F8FAFC,stroke:#2563EB
+    style L2 fill:#F8FAFC,stroke:#7C3AED
+    style FILES fill:#F8FAFC,stroke:#D97706
+    style LEG fill:#FFFFFF,stroke:#94A3B8

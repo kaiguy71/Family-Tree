@@ -69,6 +69,13 @@ function inputDate(value) {
   return year ? `${year}-${month}-${day}` : value;
 }
 
+function showFormError(form, message) {
+  const error = form.querySelector('.form-error');
+  if (!error) return;
+  error.textContent = message || '';
+  error.hidden = !message;
+}
+
 function normalizePerson(person) {
   return {
     ...person,
@@ -454,8 +461,10 @@ function placeBranchActions() {
 
 function openCreate(relation = '', role = '', relatedId = state.selectedId) {
   createForm.reset();
+  showFormError(createForm, '');
   createForm.elements.relation.value = relation;
   createForm.elements.relatedId.value = relatedId ?? '';
+  createForm.elements.relatedId.dataset.name = (relatedId === null || relatedId === undefined || relatedId === '') ? '' : personName(relatedId);
   createForm.elements.role.value = role;
   document.querySelector('#createTitle').textContent = relation ? `Add ${relation}` : 'Add a person';
   document.querySelector('#createKicker').textContent = relation ? `New ${relation} / connected to ${personName(relatedId)}` : 'New person';
@@ -475,14 +484,16 @@ branchActions.addEventListener('click', (event) => {
 document.querySelector('#addFirst').addEventListener('click', () => openCreate());
 addDisconnected.addEventListener('click', () => openCreate('', '', null));
 
-document.querySelector('#closeInspector').addEventListener('click', () => {
+function clearSelection() {
   state.selectedId = null;
   document.body.classList.remove('person-selected');
   editForm.hidden = true;
   document.querySelector('#inspectorEmpty').hidden = false;
   branchActions.hidden = true;
   render();
-});
+}
+
+document.querySelector('#closeInspector').addEventListener('click', clearSelection);
 
 document.querySelector('#closeDialog').addEventListener('click', () => dialog.close());
 
@@ -547,6 +558,7 @@ async function updateRelationships(person) {
 
 editForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+  showFormError(editForm, '');
   try {
     const person = state.people.find((entry) => entry.id === state.selectedId);
     await request('/api/people', {
@@ -565,7 +577,8 @@ editForm.addEventListener('submit', async (event) => {
       selectPerson(state.selectedId);
     }
   } catch (error) {
-    document.querySelector('#statusText').textContent = error.message;
+    await refresh().catch(() => {});
+    if (state.selectedId !== null) showFormError(editForm, error.message);
   }
 });
 
@@ -583,7 +596,12 @@ createForm.addEventListener('submit', async (event) => {
     dialog.close();
     await refresh();
   } catch (error) {
-    document.querySelector('#statusText').textContent = error.message;
+    const relatedId = createForm.elements.relatedId.value;
+    await refresh().catch(() => {});
+    const missing = relatedId !== '' && !state.people.some((person) => person.id === Number(relatedId));
+    showFormError(createForm, missing
+      ? `${createForm.elements.relatedId.dataset.name || 'That person'} is no longer on the server (it may have restarted or loaded another tree). The map has been reloaded; close this and pick someone again.`
+      : error.message);
   }
 });
 
@@ -869,6 +887,7 @@ function animationLoop() {
 async function refresh() {
   const previousPeople = new Map(state.people.map((person) => [person.id, person]));
   state.people = (await request('/api/people')).map(normalizePerson);
+  if (state.selectedId !== null && !state.people.some((person) => person.id === state.selectedId)) clearSelection();
   if (!state.people.length) {
     state.positions.clear();
     state.panX = 0;
@@ -903,16 +922,31 @@ async function refresh() {
   render();
 }
 
+// Keep the page in step with the server (e.g. after a restart) without resetting the view when nothing changed.
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden || document.querySelector('dialog[open]')) return;
+  try {
+    const people = (await request('/api/people')).map(normalizePerson);
+    if (JSON.stringify(people) !== JSON.stringify(state.people)) await refresh();
+  } catch {
+    // Server unreachable; leave the current map in place.
+  }
+});
+
 async function loadSavedTree() {
-  const files = await request('/api/savefiles');
-  if (!files.length) return;
+  const [files, current] = await Promise.all([request('/api/savefiles'), request('/api/people')]);
+  // Only offer a startup load on an empty map, so refreshing the page never replaces live data.
+  if (!files.length || current.length) return;
   savedTree.innerHTML = files.map((file) => `<option value="${escapeHtml(file)}">${escapeHtml(file)}</option>`).join('');
   loadDialog.showModal();
 }
 
 loadForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+  showFormError(loadForm, '');
   try {
+    const current = await request('/api/people');
+    if (current.length && !confirm(`Loading ${savedTree.value} replaces the ${current.length} ${current.length === 1 ? 'person' : 'people'} currently on the map. Continue?`)) return;
     await request('/api/load', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -921,7 +955,7 @@ loadForm.addEventListener('submit', async (event) => {
     loadDialog.close();
     await refresh();
   } catch (error) {
-    document.querySelector('#statusText').textContent = error.message;
+    showFormError(loadForm, error.message);
   }
 });
 
@@ -933,6 +967,7 @@ loadSavedTree().then(refresh).catch((error) => {
 
 document.querySelector('#savePeople').addEventListener('click', () => {
   saveName.value = '';
+  showFormError(saveForm, '');
   saveDialog.showModal();
 });
 
@@ -949,7 +984,7 @@ saveForm.addEventListener('submit', async (event) => {
     saveDialog.close();
     document.querySelector('#statusText').textContent = `Saved ${saveName.value.trim()}.save`;
   } catch (error) {
-    document.querySelector('#statusText').textContent = error.message;
+    showFormError(saveForm, error.message);
   }
 });
 

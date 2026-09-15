@@ -21,6 +21,7 @@
         <label>Mother<select id="editMother" name="motherId"></select></label>
         <label>Spouse<select id="editSpouse" name="spouseId"></select></label>
       </fieldset>
+      <p class="form-error" role="alert" hidden></p>
       <button type="submit" class="save">Save changes <span>+</span></button>
       <button type="button" class="danger" id="deletePerson">Remove person</button>
     </form>
@@ -40,9 +41,9 @@
     </section>
     <footer><span>CS3560 Family Tree Project</span><span>Kai B. | Joey R. | Ethan C. | Abram E. | Chayse C.</span></footer>
   </main>
-  <dialog id="personDialog"><form id="createForm"><button type="button" class="dialog-close" id="closeDialog" aria-label="Close">x</button><p class="eyebrow" id="createKicker">New person</p><h2 id="createTitle">Add a person</h2><label>Full name<input name="name" required autofocus placeholder="e.g. Alex Doe"></label><label>Birthday<input name="birthday" type="date"></label><label>Gender<select name="gender"><option value="unknown">Unknown</option><option value="male">Male</option><option value="female">Female</option></select></label><input type="hidden" name="relation"><input type="hidden" name="relatedId"><input type="hidden" name="role"><button class="save" type="submit">Add to map <span>+</span></button></form></dialog>
-  <dialog id="loadDialog"><form id="loadForm"><p class="eyebrow">Saved family trees</p><h2>Load a tree</h2><p class="muted">Choose a saved tree from this project.</p><label>Tree<select id="savedTree" name="treename" required></select></label><div class="dialog-actions"><button type="button" class="ghost-add" id="skipLoad">Start empty</button><button class="save" type="submit">Load tree <span>+</span></button></div></form></dialog>
-  <dialog id="saveDialog"><form id="saveForm"><button type="button" class="dialog-close" id="closeSaveDialog" aria-label="Close">x</button><p class="eyebrow">Save family tree</p><h2>Save this map</h2><label>Tree name<input id="saveName" name="treename" required placeholder="e.g. Battistoni family"></label><button class="save" type="submit">Save map <span>+</span></button></form></dialog>
+  <dialog id="personDialog"><form id="createForm"><button type="button" class="dialog-close" id="closeDialog" aria-label="Close">x</button><p class="eyebrow" id="createKicker">New person</p><h2 id="createTitle">Add a person</h2><label>Full name<input name="name" required autofocus placeholder="e.g. Alex Doe"></label><label>Birthday<input name="birthday" type="date"></label><label>Gender<select name="gender"><option value="unknown">Unknown</option><option value="male">Male</option><option value="female">Female</option></select></label><input type="hidden" name="relation"><input type="hidden" name="relatedId"><input type="hidden" name="role"><p class="form-error" role="alert" hidden></p><button class="save" type="submit">Add to map <span>+</span></button></form></dialog>
+  <dialog id="loadDialog"><form id="loadForm"><p class="eyebrow">Saved family trees</p><h2>Load a tree</h2><p class="muted">Choose a saved tree from this project.</p><label>Tree<select id="savedTree" name="treename" required></select></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="ghost-add" id="skipLoad">Start empty</button><button class="save" type="submit">Load tree <span>+</span></button></div></form></dialog>
+  <dialog id="saveDialog"><form id="saveForm"><button type="button" class="dialog-close" id="closeSaveDialog" aria-label="Close">x</button><p class="eyebrow">Save family tree</p><h2>Save this map</h2><label>Tree name<input id="saveName" name="treename" required placeholder="e.g. Battistoni family"></label><p class="form-error" role="alert" hidden></p><button class="save" type="submit">Save map <span>+</span></button></form></dialog>
   <script src="/app.js"></script>
 </body>
 </html>

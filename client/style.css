@@ -553,3 +553,4 @@ footer {
     line-height: 2;
   }
 }
+.form-error{margin:0 0 16px;padding:10px 12px;border:1px solid rgba(244,166,189,.55);background:rgba(244,166,189,.1);color:#f8c6d4;font-size:12px;line-height:1.5}
