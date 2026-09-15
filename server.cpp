@@ -168,6 +168,10 @@ void handleRequest(int client, FamilyTree& tree) {
         const std::string treename = jsonString(body, "treename");
         if (treename.empty() || !tree.load(treename)) respond(client, 400, "application/json", "{\"error\":\"Could not load family tree\"}");
         else respond(client, 200, "application/json", "{\"ok\":true}");
+    } else if (method == "DELETE" && path.rfind("/api/people?", 0) == 0) {
+        const long id = parseLong(queryValue(path.substr(path.find('?') + 1), "id"));
+        if (!tree.remove(id)) respond(client, 404, "application/json", "{\"error\":\"Person not found\"}");
+        else respond(client, 200, "application/json", "{\"ok\":true}");
     } else if (method == "DELETE" && path == "/api/people") {
         tree.clear();
         respond(client, 200, "application/json", "{\"ok\":true}");

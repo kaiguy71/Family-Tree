@@ -19,9 +19,7 @@ const editSpouse = document.querySelector('#editSpouse');
 const editGender = document.querySelector('#editGender');
 const savedTree = document.querySelector('#savedTree');
 const saveName = document.querySelector('#saveName');
-const zoomOut = document.querySelector('#zoomOut');
-const zoomReset = document.querySelector('#zoomReset');
-const zoomIn = document.querySelector('#zoomIn');
+const deletePerson = document.querySelector('#deletePerson');
 
 const state = {
   people: [],
@@ -32,7 +30,9 @@ const state = {
   panY: 0,
   dragNodeId: null,
   viewportDrag: null,
-  animationFrame: null
+  animationFrame: null,
+  hoveredPersonId: null,
+  press: null
 };
 
 function request(url, options) {
@@ -92,6 +92,62 @@ function relationshipCount(person) {
     + (person.mother !== null ? 1 : 0)
     + (Array.isArray(person.children) ? person.children.length : 0)
     + (Array.isArray(person.spouses) ? person.spouses.length : 0);
+}
+
+function getGeneration(personId, memo = new Map(), visiting = new Set()) {
+  if (memo.has(personId)) return memo.get(personId);
+  if (visiting.has(personId)) return 0;
+  const person = state.people.find((entry) => entry.id === personId);
+  if (!person) return 0;
+  visiting.add(personId);
+  const childGenerations = person.children
+    .map((id) => getGeneration(id, memo, visiting));
+  visiting.delete(personId);
+  const generation = childGenerations.length ? Math.max(...childGenerations) + 1 : 0;
+  memo.set(personId, generation);
+  return generation;
+}
+
+function adjacentPeople(personId) {
+  const person = state.people.find((entry) => entry.id === personId);
+  return new Set(person ? [
+    person.father, person.mother, ...person.children, ...person.spouses
+  ].filter((id) => id !== null && id !== undefined) : []);
+}
+
+function buildRelationDistances() {
+  const adjacency = new Map();
+  state.people.forEach((person) => {
+    const edges = [
+      person.father,
+      person.mother,
+      ...person.children
+    ].filter((id) => id !== null && id !== undefined).map((id) => ({ id, vague: false }));
+    person.spouses.forEach((id) => edges.push({ id, vague: true }));
+    adjacency.set(person.id, edges);
+  });
+  const distances = new Map();
+
+  state.people.forEach((person) => {
+    const seen = new Map([[person.id, { distance: 0, vague: false }]]);
+    const queue = [person.id];
+    while (queue.length) {
+      const current = queue.shift();
+      const currentState = seen.get(current);
+      (adjacency.get(current) || []).forEach((neighbor) => {
+        if (!seen.has(neighbor.id)) {
+          seen.set(neighbor.id, {
+            distance: currentState.distance + 1,
+            vague: currentState.vague || neighbor.vague
+          });
+          queue.push(neighbor.id);
+        }
+      });
+    }
+    distances.set(person.id, seen);
+  });
+
+  return distances;
 }
 
 function yearOf(person) {
@@ -275,7 +331,10 @@ function drawConnections() {
     const curveX = (from.x + to.x) / 2 + normalX * curve;
     const curveY = (from.y + to.y) / 2 + normalY * curve;
     const path = `M ${from.x} ${from.y} Q ${curveX} ${curveY} ${to.x} ${to.y}`;
-    markup.push(`<path class="edge-${kind}" d="${path}" />`);
+    const focused = state.hoveredPersonId === null
+      || fromId === state.hoveredPersonId
+      || toId === state.hoveredPersonId;
+    markup.push(`<path class="edge-${kind}${focused ? '' : ' edge-dimmed'}" d="${path}" />`);
   });
 
   connections.innerHTML = markup.join('');
@@ -314,7 +373,8 @@ function render() {
   addDisconnected.hidden = state.people.length === 0;
 
   peopleList.innerHTML = '';
-  const nodeRadiusBase = 26;
+  const generationMemo = new Map();
+  const neighbors = state.hoveredPersonId === null ? new Set() : adjacentPeople(state.hoveredPersonId);
 
   const orderedPeople = [...state.people].sort((a, b) => a.name.localeCompare(b.name));
   orderedPeople.forEach((person) => {
@@ -322,11 +382,15 @@ function render() {
     if (!position) return;
 
     const node = document.createElement('article');
-    node.className = `person gender-${person.gender} ${state.selectedId === person.id ? 'selected' : ''}`;
+    const generation = getGeneration(person.id, generationMemo);
+    const focused = state.hoveredPersonId === null
+      || person.id === state.hoveredPersonId
+      || neighbors.has(person.id);
+    node.className = `person gender-${person.gender} ${state.selectedId === person.id ? 'selected' : ''}${focused ? '' : ' dimmed'}`;
     node.dataset.id = String(person.id);
     node.style.left = `${position.x}px`;
     node.style.top = `${position.y}px`;
-    const radius = nodeRadiusBase + relationshipCount(person) * 5;
+    const radius = 22 * (3 ** generation);
     node.style.width = `${radius * 2}px`;
     node.style.height = `${radius * 2}px`;
 
@@ -395,15 +459,15 @@ function placeBranchActions() {
   branchActions.style.top = `${top + 44}px`;
 }
 
-function openCreate(relation = '', role = '') {
+function openCreate(relation = '', role = '', relatedId = state.selectedId) {
   createForm.reset();
   showFormError(createForm, '');
   createForm.elements.relation.value = relation;
-  createForm.elements.relatedId.value = state.selectedId ?? '';
-  createForm.elements.relatedId.dataset.name = state.selectedId !== null ? personName(state.selectedId) : '';
+  createForm.elements.relatedId.value = relatedId ?? '';
+  createForm.elements.relatedId.dataset.name = (relatedId === null || relatedId === undefined || relatedId === '') ? '' : personName(relatedId);
   createForm.elements.role.value = role;
   document.querySelector('#createTitle').textContent = relation ? `Add ${relation}` : 'Add a person';
-  document.querySelector('#createKicker').textContent = relation ? `New ${relation} / connected to ${personName(state.selectedId)}` : 'New person';
+  document.querySelector('#createKicker').textContent = relation ? `New ${relation} / connected to ${personName(relatedId)}` : 'New person';
   dialog.showModal();
 }
 
@@ -418,7 +482,7 @@ branchActions.addEventListener('click', (event) => {
 });
 
 document.querySelector('#addFirst').addEventListener('click', () => openCreate());
-addDisconnected.addEventListener('click', () => openCreate());
+addDisconnected.addEventListener('click', () => openCreate('', '', null));
 
 function clearSelection() {
   state.selectedId = null;
@@ -432,6 +496,21 @@ function clearSelection() {
 document.querySelector('#closeInspector').addEventListener('click', clearSelection);
 
 document.querySelector('#closeDialog').addEventListener('click', () => dialog.close());
+
+deletePerson.addEventListener('click', async () => {
+  if (state.selectedId === null || !confirm(`Remove ${personName(state.selectedId)} from the family tree?`)) return;
+  try {
+    await request(`/api/people?id=${state.selectedId}`, { method: 'DELETE' });
+    state.selectedId = null;
+    document.body.classList.remove('person-selected');
+    editForm.hidden = true;
+    document.querySelector('#inspectorEmpty').hidden = false;
+    branchActions.hidden = true;
+    await refresh();
+  } catch (error) {
+    document.querySelector('#statusText').textContent = error.message;
+  }
+});
 
 async function updateRelationships(person) {
   const fatherId = editFather.value ? Number(editFather.value) : null;
@@ -527,21 +606,19 @@ createForm.addEventListener('submit', async (event) => {
 });
 
 function setZoom(nextZoom) {
+  const viewportWidth = treeScroll.clientWidth || 1000;
+  const viewportHeight = treeScroll.clientHeight || 700;
+  const centerWorldX = (viewportWidth / 2 - state.panX) / state.zoom;
+  const centerWorldY = (viewportHeight / 2 - state.panY) / state.zoom;
   state.zoom = Math.max(0.18, Math.min(12, nextZoom));
+  state.panX = viewportWidth / 2 - centerWorldX * state.zoom;
+  state.panY = viewportHeight / 2 - centerWorldY * state.zoom;
   render();
 }
 
-zoomOut.addEventListener('click', () => setZoom(state.zoom / 1.2));
-zoomReset.addEventListener('click', () => {
-  state.zoom = 1;
-  fitToNetwork();
-  render();
-});
-zoomIn.addEventListener('click', () => setZoom(state.zoom * 1.2));
-
-document.querySelector('.tree-scroll').addEventListener('wheel', (event) => {
+treeScroll.addEventListener('wheel', (event) => {
   event.preventDefault();
-  const delta = event.deltaY < 0 ? 1.12 : 0.9;
+  const delta = event.deltaY < 0 ? 1.072 : 0.928;
   setZoom(state.zoom * delta);
 }, { passive: false });
 
@@ -556,10 +633,13 @@ function pointerToWorld(clientX, clientY) {
 }
 
 treeScroll.addEventListener('pointerdown', (event) => {
+  const action = event.target.closest('[data-relation]');
+  if (action) return;
   const personNode = event.target.closest('.person');
   if (personNode) {
     const personId = Number(personNode.dataset.id);
-    state.dragNodeId = personId;
+    state.press = { personId, x: event.clientX, y: event.clientY, moved: false };
+    state.dragNodeId = null;
     const personPosition = state.positions.get(personId);
     if (personPosition) {
       const world = pointerToWorld(event.clientX, event.clientY);
@@ -581,6 +661,30 @@ treeScroll.addEventListener('pointerdown', (event) => {
 });
 
 treeScroll.addEventListener('pointermove', (event) => {
+  if (state.press && !state.press.moved && Math.hypot(event.clientX - state.press.x, event.clientY - state.press.y) > 6) {
+    state.press.moved = true;
+    state.dragNodeId = state.press.personId;
+  }
+  if (state.press && !state.press.moved) {
+    const rect = treeScroll.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    let closest = null;
+    let distance = Infinity;
+    state.people.forEach((person) => {
+      const position = state.positions.get(person.id);
+      if (!position) return;
+      const candidateDistance = Math.hypot(position.x * state.zoom + state.panX - x, position.y * state.zoom + state.panY - y);
+      if (candidateDistance < distance) {
+        distance = candidateDistance;
+        closest = person.id;
+      }
+    });
+    if (closest !== null && distance < 180 && state.hoveredPersonId !== closest) {
+      state.hoveredPersonId = closest;
+      render();
+    }
+  }
   if (state.dragNodeId !== null) {
     const world = pointerToWorld(event.clientX, event.clientY);
     const node = state.positions.get(state.dragNodeId);
@@ -598,16 +702,40 @@ treeScroll.addEventListener('pointermove', (event) => {
     state.panX = state.viewportDrag.panX + (event.clientX - state.viewportDrag.startX);
     state.panY = state.viewportDrag.panY + (event.clientY - state.viewportDrag.startY);
     render();
+    return;
+  }
+
+  const hoveredNode = event.target.closest?.('.person');
+  const hoveredId = hoveredNode ? Number(hoveredNode.dataset.id) : null;
+  if (!hoveredNode && event.target.closest?.('.branch-actions')) {
+    return;
+  }
+  if (hoveredId !== state.hoveredPersonId && hoveredId !== null) {
+    state.hoveredPersonId = hoveredId;
+    render();
+  } else if (hoveredId === null && state.hoveredPersonId !== null) {
+    state.hoveredPersonId = null;
+    render();
   }
 });
 
 function releasePointer() {
+  if (state.press && !state.press.moved) {
+    selectPerson(state.press.personId);
+  }
+  state.press = null;
   state.dragNodeId = null;
   state.viewportDrag = null;
 }
 
 treeScroll.addEventListener('pointerup', releasePointer);
 treeScroll.addEventListener('pointerleave', releasePointer);
+treeScroll.addEventListener('pointerout', (event) => {
+  if (!event.relatedTarget || !treeScroll.contains(event.relatedTarget)) {
+    state.hoveredPersonId = null;
+    render();
+  }
+});
 window.addEventListener('resize', () => {
   if (state.people.length) {
     fitToNetwork();
@@ -620,10 +748,12 @@ function stepPhysics() {
 
   const nodes = new Map();
   state.positions.forEach((value, key) => {
-    nodes.set(key, { ...value, vx: value.vx || 0, vy: value.vy || 0, radius: 22 + relationshipCount(state.people.find((person) => person.id === key) || { children: [], spouses: [] }) * 4 });
+    const person = state.people.find((entry) => entry.id === key);
+    nodes.set(key, { ...value, vx: value.vx || 0, vy: value.vy || 0, radius: person ? 22 * (3 ** getGeneration(key)) : 22 });
   });
 
   const linked = new Set();
+  const relationDistances = buildRelationDistances();
   state.people.forEach((person) => {
     [person.father, person.mother, ...person.children, ...person.spouses].filter((value) => value !== null).forEach((id) => {
       const pair = [person.id, id].sort((a, b) => a - b).join(':');
@@ -647,44 +777,93 @@ function stepPhysics() {
       const minGap = (firstNode.radius || 22) + (secondNode.radius || 22) + 18;
       const pairId = [firstPerson.id, secondPerson.id].sort((a, b) => a - b).join(':');
       const isLinked = linked.has(pairId);
+      const relation = relationDistances.get(firstPerson.id)?.get(secondPerson.id);
+      const relationDistance = relation?.distance ?? Infinity;
+      const radiusSum = firstNode.radius + secondNode.radius;
+      const backgroundRange = Math.max(260, radiusSum * 0.75);
+      const backgroundRepel = 0.035 * Math.exp(-distance / backgroundRange);
+      const backgroundFx = (dx / distance) * backgroundRepel;
+      const backgroundFy = (dy / distance) * backgroundRepel;
+      firstNode.vx -= backgroundFx;
+      firstNode.vy -= backgroundFy;
+      secondNode.vx += backgroundFx;
+      secondNode.vy += backgroundFy;
 
       if (isLinked) {
         const desired = 190;
-        const springForce = (distance - desired) * 0.012;
+        // Keep linked bodies from collapsing into one another while allowing
+        // the orbit to settle gently instead of producing a strong tug.
+        const springForce = (distance - desired) * 0.004;
         const fx = (dx / distance) * springForce;
         const fy = (dy / distance) * springForce;
         firstNode.vx += fx;
         firstNode.vy += fy;
         secondNode.vx -= fx;
         secondNode.vy -= fy;
-      } else if (distance < 200) {
-        const repel = (200 - distance) * 0.04;
-        const fx = (dx / distance) * repel;
-        const fy = (dy / distance) * repel;
-        firstNode.vx -= fx;
-        firstNode.vy -= fy;
-        secondNode.vx += fx;
-        secondNode.vy += fy;
+      } else {
+        const largestRadius = Math.max(firstNode.radius || 22, secondNode.radius || 22);
+        const separationRange = relationDistance === Infinity
+          ? Math.max(260, largestRadius * 1.5)
+          : Math.max(220, largestRadius * 1.25);
+        const repulsionMultiplier = relationDistance === Infinity
+          ? 1
+          : relationDistance === 2 && relation.vague
+            ? 1.5
+            : Math.min(2.5, 0.8 + Math.max(0, relationDistance - 2) * ((2.5 - 0.8) / 4));
+
+        if (distance < separationRange) {
+          const repel = (separationRange - distance) * 0.12 * repulsionMultiplier;
+          const fx = (dx / distance) * repel;
+          const fy = (dy / distance) * repel;
+          firstNode.vx -= fx;
+          firstNode.vy -= fy;
+          secondNode.vx += fx;
+          secondNode.vy += fy;
+        }
       }
 
       if (distance < minGap) {
-        const push = (minGap - distance) * 0.2;
+        // Resolve overlap along the collision normal only. Tangential
+        // velocity is preserved, allowing planets to slide around each other.
+        const overlap = minGap - distance;
         const nx = dx / distance;
         const ny = dy / distance;
-        firstNode.vx -= nx * push;
-        firstNode.vy -= ny * push;
-        secondNode.vx += nx * push;
-        secondNode.vy += ny * push;
+        const inverseMassTotal = (1 / firstNode.radius) + (1 / secondNode.radius);
+        const firstShare = (1 / firstNode.radius) / inverseMassTotal;
+        const secondShare = (1 / secondNode.radius) / inverseMassTotal;
+        firstNode.x -= nx * overlap * firstShare;
+        firstNode.y -= ny * overlap * firstShare;
+        secondNode.x += nx * overlap * secondShare;
+        secondNode.y += ny * overlap * secondShare;
+
+        const relativeNormalVelocity =
+          (secondNode.vx - firstNode.vx) * nx
+          + (secondNode.vy - firstNode.vy) * ny;
+        if (relativeNormalVelocity < 0) {
+          // Cancel only the inward normal velocity. This is a zero-restitution
+          // collision: tangential velocity remains available for sliding.
+          const impulse = -relativeNormalVelocity;
+          firstNode.vx -= nx * impulse * firstShare;
+          firstNode.vy -= ny * impulse * firstShare;
+          secondNode.vx += nx * impulse * secondShare;
+          secondNode.vy += ny * impulse * secondShare;
+        }
       }
     }
   }
 
-  const centerX = 850;
-  const centerY = 500;
+  // Keep the force system centered on itself so it cannot introduce a
+  // constant screen-direction drift.
+  const center = [...nodes.values()].reduce((sum, node) => ({
+    x: sum.x + node.x,
+    y: sum.y + node.y
+  }), { x: 0, y: 0 });
+  center.x /= nodes.size;
+  center.y /= nodes.size;
 
   nodes.forEach((node) => {
-    node.vx += (centerX - node.x) * 0.00035;
-    node.vy += (centerY - node.y) * 0.00035;
+    node.vx += (center.x - node.x) * 0.00035;
+    node.vy += (center.y - node.y) * 0.00035;
     node.vx *= 0.82;
     node.vy *= 0.82;
     node.x += node.vx;
@@ -706,6 +885,7 @@ function animationLoop() {
 }
 
 async function refresh() {
+  const previousPeople = new Map(state.people.map((person) => [person.id, person]));
   state.people = (await request('/api/people')).map(normalizePerson);
   if (state.selectedId !== null && !state.people.some((person) => person.id === state.selectedId)) clearSelection();
   if (!state.people.length) {
@@ -717,8 +897,28 @@ async function refresh() {
     return;
   }
 
-  seedPositions();
-  fitToNetwork();
+  if (!state.positions.size) {
+    seedPositions();
+    fitToNetwork();
+  } else {
+    const existing = new Set(state.people.map((person) => person.id));
+    state.positions.forEach((value, id) => {
+      if (!existing.has(id)) state.positions.delete(id);
+    });
+    state.people.forEach((person, index) => {
+      if (!state.positions.has(person.id)) {
+        const anchor = person.father ?? person.mother ?? person.spouses[0];
+        const source = anchor !== undefined ? state.positions.get(anchor) : null;
+        state.positions.set(person.id, {
+          x: source ? source.x + 100 : 500 + index * 90,
+          y: source ? source.y + 100 : 400,
+          vx: 0,
+          vy: 0
+        });
+      }
+    });
+    void previousPeople;
+  }
   render();
 }
 

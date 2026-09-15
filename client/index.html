@@ -23,6 +23,7 @@
       </fieldset>
       <p class="form-error" role="alert" hidden></p>
       <button type="submit" class="save">Save changes <span>+</span></button>
+      <button type="button" class="danger" id="deletePerson">Remove person</button>
     </form>
   </aside>
   <main>
@@ -35,7 +36,7 @@
       </div>
     </header>
     <section class="map-shell">
-      <div class="map-tools"><span id="count">0 people</span><span class="map-actions"><button id="zoomOut" type="button" aria-label="Zoom out">-</button><button id="zoomReset" type="button">100%</button><button id="zoomIn" type="button" aria-label="Zoom in">+</button><button id="savePeople" type="button">Save map</button><button id="clearPeople" type="button">Clear map</button><i class="legend-male"></i> male <i class="legend-female"></i> female <i class="legend-parent"></i> parent</span></div>
+      <div class="map-tools"><span id="count">0 people</span><span class="map-actions"><span>scroll to zoom</span><button id="savePeople" type="button">Save map</button><button id="clearPeople" type="button">Clear map</button><i class="legend-male"></i> male <i class="legend-female"></i> female <i class="legend-parent"></i> parent</span></div>
       <div class="tree-scroll"><div id="treeCanvas" class="tree-canvas"><svg id="connections" aria-hidden="true"></svg><div id="yearBands"></div><div id="peopleList"></div><div id="emptyAdd" class="empty-add"><button id="addFirst" aria-label="Add first person"><span>+</span></button><p>Add first person</p></div><div id="branchActions" class="branch-actions" hidden></div></div></div><button id="addDisconnected" class="ghost-add" type="button" hidden><span>+</span> Add disconnected person</button>
     </section>
     <footer><span>CS3560 Family Tree Project</span><span>Kai B. | Joey R. | Ethan C. | Abram E. | Chayse C.</span></footer>
