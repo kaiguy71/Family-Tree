@@ -968,11 +968,21 @@ function stepPhysics() {
   center.x /= nodes.size;
   center.y /= nodes.size;
 
-  nodes.forEach((node) => {
+  const dampedVelocity = [...nodes.values()].reduce((sum, node) => {
     node.vx += (center.x - node.x) * 0.00035;
     node.vy += (center.y - node.y) * 0.00035;
     node.vx *= 0.82;
     node.vy *= 0.82;
+    return { x: sum.x + node.vx, y: sum.y + node.vy };
+  }, { x: 0, y: 0 });
+  dampedVelocity.x /= nodes.size;
+  dampedVelocity.y /= nodes.size;
+
+  // Pairwise forces should cancel, but rounding and collision corrections can
+  // accumulate a tiny net velocity. Remove only that shared drift.
+  nodes.forEach((node) => {
+    node.vx -= dampedVelocity.x;
+    node.vy -= dampedVelocity.y;
     node.x += node.vx;
     node.y += node.vy;
   });
