@@ -53,6 +53,41 @@ function escapeHtml(value) {
   }[character]));
 }
 
+function personNameLines(name) {
+  const words = String(name || 'Unknown').trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return [words[0] || 'Unknown'];
+  return [words[0], words.slice(1).join(' ')];
+}
+
+function visibleNameIds(orderedPeople, generationMemo) {
+  const candidates = orderedPeople
+    .map((person) => {
+      const position = state.positions.get(person.id);
+      if (!position) return null;
+      const generation = getGeneration(person.id, generationMemo);
+      const [firstLine, lastLine = ''] = personNameLines(person.name);
+      const width = Math.min(22 * (3 ** generation) * 1.6, Math.max(firstLine.length, lastLine.length) * 7.2 + 8);
+      return { id: person.id, generation, position, width, height: lastLine ? 28 : 16 };
+    })
+    .filter(Boolean)
+    .filter((candidate) => candidate.generation === Math.max(...orderedPeople.map((person) => getGeneration(person.id, generationMemo)))
+      || state.zoom >= 0.55 + candidate.generation * 0.12)
+    .sort((first, second) => second.generation - first.generation);
+
+  const visible = [];
+  candidates.forEach((candidate) => {
+    const overlaps = visible.some((other) => {
+      const horizontal = Math.abs(candidate.position.x - other.position.x) * state.zoom
+        < (candidate.width + other.width) * state.zoom / 2;
+      const vertical = Math.abs(candidate.position.y - other.position.y) * state.zoom
+        < (candidate.height + other.height) * state.zoom / 2;
+      return horizontal && vertical;
+    });
+    if (!overlaps) visible.push(candidate);
+  });
+  return new Set(visible.map((candidate) => candidate.id));
+}
+
 function personName(id) {
   return state.people.find((person) => person.id === id)?.name || 'Unknown';
 }
@@ -113,41 +148,6 @@ function adjacentPeople(personId) {
   return new Set(person ? [
     person.father, person.mother, ...person.children, ...person.spouses
   ].filter((id) => id !== null && id !== undefined) : []);
-}
-
-function buildRelationDistances() {
-  const adjacency = new Map();
-  state.people.forEach((person) => {
-    const edges = [
-      person.father,
-      person.mother,
-      ...person.children
-    ].filter((id) => id !== null && id !== undefined).map((id) => ({ id, vague: false }));
-    person.spouses.forEach((id) => edges.push({ id, vague: true }));
-    adjacency.set(person.id, edges);
-  });
-  const distances = new Map();
-
-  state.people.forEach((person) => {
-    const seen = new Map([[person.id, { distance: 0, vague: false }]]);
-    const queue = [person.id];
-    while (queue.length) {
-      const current = queue.shift();
-      const currentState = seen.get(current);
-      (adjacency.get(current) || []).forEach((neighbor) => {
-        if (!seen.has(neighbor.id)) {
-          seen.set(neighbor.id, {
-            distance: currentState.distance + 1,
-            vague: currentState.vague || neighbor.vague
-          });
-          queue.push(neighbor.id);
-        }
-      });
-    }
-    distances.set(person.id, seen);
-  });
-
-  return distances;
 }
 
 function yearOf(person) {
@@ -377,6 +377,7 @@ function render() {
   const neighbors = state.hoveredPersonId === null ? new Set() : adjacentPeople(state.hoveredPersonId);
 
   const orderedPeople = [...state.people].sort((a, b) => a.name.localeCompare(b.name));
+  const visibleNames = visibleNameIds(orderedPeople, generationMemo);
   orderedPeople.forEach((person) => {
     const position = state.positions.get(person.id);
     if (!position) return;
@@ -395,9 +396,10 @@ function render() {
     node.style.height = `${radius * 2}px`;
 
     const year = yearOf(person);
+    const [firstName, lastName] = personNameLines(person.name);
     node.innerHTML = `
       <span class="planet-core"></span>
-      <span class="planet-name">${escapeHtml(person.name)}</span>
+      <span class="planet-name${visibleNames.has(person.id) ? '' : ' label-hidden'}">${escapeHtml(firstName)}${lastName ? `<br>${escapeHtml(lastName)}` : ''}</span>
       <span class="planet-year">${year || 'Unknown'}</span>
     `;
 
@@ -420,7 +422,7 @@ function fitToNetwork() {
     const position = state.positions.get(state.people[0].id);
     if (position) {
       // Frame the first person closely, leaving room below for branch actions.
-      state.zoom = Math.max(0.35, Math.min(3, (viewportWidth - 80) / 220, (viewportHeight - 80) / 240));
+      state.zoom = Math.min(3, (viewportWidth - 80) / 220, (viewportHeight - 80) / 240);
       state.panX = viewportWidth / 2 - position.x * state.zoom;
       state.panY = viewportHeight / 2 - (position.y + 35) * state.zoom;
       return;
@@ -429,7 +431,7 @@ function fitToNetwork() {
 
   const scaleX = (viewportWidth - 80) / Math.max(1, bounds.width);
   const scaleY = (viewportHeight - 80) / Math.max(1, bounds.height);
-  state.zoom = Math.max(0.35, Math.min(1.8, Math.min(scaleX, scaleY)));
+  state.zoom = Math.min(1.8, Math.min(scaleX, scaleY));
 
   state.panX = (viewportWidth - bounds.width * state.zoom) / 2 - bounds.minX * state.zoom;
   state.panY = (viewportHeight - bounds.height * state.zoom) / 2 - bounds.minY * state.zoom;
@@ -664,7 +666,7 @@ function setZoom(nextZoom) {
   const viewportHeight = treeScroll.clientHeight || 700;
   const centerWorldX = (viewportWidth / 2 - state.panX) / state.zoom;
   const centerWorldY = (viewportHeight / 2 - state.panY) / state.zoom;
-  state.zoom = Math.max(0.18, Math.min(12, nextZoom));
+  state.zoom = Math.max(0.01, Math.min(12, nextZoom));
   state.panX = viewportWidth / 2 - centerWorldX * state.zoom;
   state.panY = viewportHeight / 2 - centerWorldY * state.zoom;
   render();
@@ -801,17 +803,49 @@ function stepPhysics() {
   if (!state.people.length) return;
 
   const nodes = new Map();
+  const generationMemo = new Map();
   state.positions.forEach((value, key) => {
     const person = state.people.find((entry) => entry.id === key);
-    nodes.set(key, { ...value, vx: value.vx || 0, vy: value.vy || 0, radius: person ? 22 * (3 ** getGeneration(key)) : 22 });
+    const generation = person ? getGeneration(key, generationMemo) : 0;
+    nodes.set(key, {
+      ...value,
+      vx: value.vx || 0,
+      vy: value.vy || 0,
+      generation,
+      radius: 22 * (3 ** generation)
+    });
   });
 
   const linked = new Set();
-  const relationDistances = buildRelationDistances();
+  const sharedChildConnections = new Set();
+  const componentByPerson = new Map();
+  const pairId = (firstId, secondId) => [firstId, secondId].sort((a, b) => a - b).join(':');
+
+  getConnectedComponents().forEach((component) => {
+    component.forEach((personId) => componentByPerson.set(personId, component));
+  });
+
   state.people.forEach((person) => {
-    [person.father, person.mother, ...person.children, ...person.spouses].filter((value) => value !== null).forEach((id) => {
-      const pair = [person.id, id].sort((a, b) => a - b).join(':');
-      linked.add(pair);
+    [person.father, person.mother, ...person.children, ...person.spouses]
+      .filter((value) => value !== null && value !== undefined)
+      .forEach((id) => linked.add(pairId(person.id, id)));
+
+    const parents = [person.father, person.mother]
+      .filter((id) => id !== null && id !== undefined);
+    if (parents.length === 2) {
+      sharedChildConnections.add(pairId(parents[0], parents[1]));
+    }
+  });
+
+  state.people.forEach((person) => {
+    person.children.forEach((childId) => {
+      const child = state.people.find((candidate) => candidate.id === childId);
+      if (!child) return;
+      [child.father, child.mother]
+        .filter((id) => id !== null && id !== undefined)
+        .forEach((parentId) => {
+          if (parentId !== person.id) sharedChildConnections.add(pairId(person.id, parentId));
+        });
     });
   });
 
@@ -828,45 +862,53 @@ function stepPhysics() {
       const dx = secondNode.x - firstNode.x;
       const dy = secondNode.y - firstNode.y;
       const distance = Math.hypot(dx, dy) || 1;
-      const minGap = (firstNode.radius || 22) + (secondNode.radius || 22) + 18;
-      const pairId = [firstPerson.id, secondPerson.id].sort((a, b) => a - b).join(':');
-      const isLinked = linked.has(pairId);
-      const relation = relationDistances.get(firstPerson.id)?.get(secondPerson.id);
-      const relationDistance = relation?.distance ?? Infinity;
-      const radiusSum = firstNode.radius + secondNode.radius;
-      const backgroundRange = Math.max(260, radiusSum * 0.75);
-      const backgroundRepel = 0.035 * Math.exp(-distance / backgroundRange);
-      const backgroundFx = (dx / distance) * backgroundRepel;
-      const backgroundFy = (dy / distance) * backgroundRepel;
-      firstNode.vx -= backgroundFx;
-      firstNode.vy -= backgroundFy;
-      secondNode.vx += backgroundFx;
-      secondNode.vy += backgroundFy;
+      const forcefieldGap = 1.1 * (firstNode.radius + secondNode.radius);
+      const pair = pairId(firstPerson.id, secondPerson.id);
+      const isLinked = linked.has(pair);
+      const sameBodySize = firstNode.generation === secondNode.generation;
 
-      if (isLinked) {
-        const desired = 190;
-        // Keep linked bodies from collapsing into one another while allowing
-        // the orbit to settle gently instead of producing a strong tug.
-        const springForce = (distance - desired) * 0.004;
+      // A barely perceptible expansion gives disconnected clusters enough
+      // motion to settle without competing with family forces.
+      const universalRepel = 0.001;
+      const universalFx = (dx / distance) * universalRepel;
+      const universalFy = (dy / distance) * universalRepel;
+      firstNode.vx -= universalFx;
+      firstNode.vy -= universalFy;
+      secondNode.vx += universalFx;
+      secondNode.vy += universalFy;
+
+      if (sameBodySize) {
+        // Grandparent bodies are the spacing baseline. Scale the separation
+        // up for larger bodies and down for smaller bodies by their radius.
+        const grandparentRadius = 22 * (3 ** 2);
+        const averageRadius = (firstNode.radius + secondNode.radius) / 2;
+        const relativeSize = Math.max(0.25, averageRadius / grandparentRadius);
+        const separationRange = forcefieldGap + (260 * 1.4) * relativeSize;
+        if (distance < separationRange) {
+          const repel = (separationRange - distance) * (0.08 * relativeSize);
+          const fx = (dx / distance) * repel;
+          const fy = (dy / distance) * repel;
+          firstNode.vx -= fx;
+          firstNode.vy -= fy;
+          secondNode.vx += fx;
+          secondNode.vy += fy;
+        }
+      } else if (isLinked) {
+        const desired = forcefieldGap + 60;
+        const springForce = (distance - desired) * 0.003;
         const fx = (dx / distance) * springForce;
         const fy = (dy / distance) * springForce;
         firstNode.vx += fx;
         firstNode.vy += fy;
         secondNode.vx -= fx;
         secondNode.vy -= fy;
-      } else {
-        const largestRadius = Math.max(firstNode.radius || 22, secondNode.radius || 22);
-        const separationRange = relationDistance === Infinity
-          ? Math.max(260, largestRadius * 1.5)
-          : Math.max(220, largestRadius * 1.25);
-        const repulsionMultiplier = relationDistance === Infinity
-          ? 1
-          : relationDistance === 2 && relation.vague
-            ? 1.5
-            : Math.min(2.5, 0.8 + Math.max(0, relationDistance - 2) * ((2.5 - 0.8) / 4));
-
+      } else if (
+        sharedChildConnections.has(pair)
+        || componentByPerson.get(firstPerson.id) !== componentByPerson.get(secondPerson.id)
+      ) {
+        const separationRange = forcefieldGap + 180;
         if (distance < separationRange) {
-          const repel = (separationRange - distance) * 0.12 * repulsionMultiplier;
+          const repel = (separationRange - distance) * 0.045;
           const fx = (dx / distance) * repel;
           const fy = (dy / distance) * repel;
           firstNode.vx -= fx;
@@ -876,12 +918,12 @@ function stepPhysics() {
         }
       }
 
-      if (distance < minGap) {
-        // Resolve overlap along the collision normal only. Tangential
-        // velocity is preserved, allowing planets to slide around each other.
-        const overlap = minGap - distance;
-        const nx = dx / distance;
-        const ny = dy / distance;
+      if (distance < forcefieldGap) {
+        // Forcefields prevent clipping while preserving tangential movement,
+        // so another planet can roll across the boundary like a floor.
+        const overlap = forcefieldGap - distance;
+        const nx = dx === 0 && dy === 0 ? (firstPerson.id < secondPerson.id ? 1 : -1) : dx / distance;
+        const ny = dx === 0 && dy === 0 ? 0 : dy / distance;
         const inverseMassTotal = (1 / firstNode.radius) + (1 / secondNode.radius);
         const firstShare = (1 / firstNode.radius) / inverseMassTotal;
         const secondShare = (1 / secondNode.radius) / inverseMassTotal;
