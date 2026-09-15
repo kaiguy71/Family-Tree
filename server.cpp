@@ -12,6 +12,47 @@
 #include <unistd.h>
 
 namespace {
+// Dates from the browser use MM-DD-YYYY. Unknown dates cannot establish age.
+long birthdayKey(const std::string& birthday) {
+    if (birthday.empty()) return 0;
+    std::istringstream input(birthday);
+    int month = 0, day = 0, year = 0;
+    char first = 0, second = 0;
+    if (!(input >> month >> first >> day >> second >> year)
+        || first != '-' || second != '-' || !input.eof()
+        || month < 1 || month > 12 || day < 1 || day > 31 || year < 1) return 0;
+    return year * 10000L + month * 100L + day;
+}
+
+bool youngerParent(const std::string& parent, const std::string& child) {
+    const long parentDate = birthdayKey(parent), childDate = birthdayKey(child);
+    return parentDate && childDate && parentDate > childDate;
+}
+
+bool conflictsWithParents(const person* current, const std::string& birthday) {
+    return (current->getFather() && youngerParent(current->getFather()->getBirthday(), birthday))
+        || (current->getMother() && youngerParent(current->getMother()->getBirthday(), birthday));
+}
+
+bool invalidBirthdayUpdate(const person* current, const std::string& birthday) {
+    if (conflictsWithParents(current, birthday)) return true;
+    for (const person* child : current->getChildren()) {
+        if (youngerParent(birthday, child->getBirthday())) return true;
+    }
+    return false;
+}
+
+bool invalidRelatedBirthday(const person* related, const std::string& relation,
+                            const std::string& birthday) {
+    if (!related) return false;
+    if (relation == "parent") return youngerParent(birthday, related->getBirthday());
+    if (relation == "child") return youngerParent(related->getBirthday(), birthday);
+    if (relation == "sibling") return conflictsWithParents(related, birthday);
+    return false;
+}
+
+const std::string birthdayError = "{\"error\":\"A father or mother cannot be younger than their child. Please correct the birthdate.\"}";
+
 /** @brief Escapes backslashes and quotes for the server's JSON responses. */
 std::string jsonEscape(const std::string& value) {
     std::string result;
@@ -184,6 +225,7 @@ void handleRequest(int client, FamilyTree& tree) {
         person* related = tree.find(jsonLong(body, "relatedId"));
         if (name.empty()) respond(client, 400, "application/json", "{\"error\":\"Name is required\"}");
         else if (!relation.empty() && (!related || (relation != "sibling" && relation != "spouse" && relation != "parent" && relation != "child"))) respond(client, 400, "application/json", "{\"error\":\"Invalid relationship\"}");
+        else if (invalidRelatedBirthday(related, relation, birthday)) respond(client, 400, "application/json", birthdayError);
         else respond(client, 200, "application/json", "{\"id\":" + std::to_string(tree.addRelatedPerson(name, birthday, gender, related, relation, role)->getId()) + "}");
     } else if ((method == "PATCH" || method == "PUT") && path == "/api/people") {
         person* current = tree.find(jsonLong(body, "id"));
@@ -191,12 +233,14 @@ void handleRequest(int client, FamilyTree& tree) {
         const std::string birthday = jsonString(body, "birthday");
         const person::Gender gender = parseGender(jsonString(body, "gender"));
         if (!current || name.empty()) respond(client, 400, "application/json", "{\"error\":\"Invalid person update\"}");
+        else if (invalidBirthdayUpdate(current, birthday)) respond(client, 400, "application/json", birthdayError);
         else { current->setName(name); current->setBirthday(birthday); current->setGender(gender); respond(client, 200, "application/json", "{\"ok\":true}"); }
     } else if (method == "POST" && path == "/api/relationships") {
         person* child = tree.find(jsonLong(body, "childId"));
         person* parent = tree.find(jsonLong(body, "parentId"));
         const std::string role = jsonString(body, "role");
         if (!child || !parent || (role != "father" && role != "mother")) respond(client, 400, "application/json", "{\"error\":\"Invalid relationship\"}");
+        else if (youngerParent(parent->getBirthday(), child->getBirthday())) respond(client, 400, "application/json", birthdayError);
         else { parent->addChild(child, role == "father" ? person::ParentRole::Father : person::ParentRole::Mother); respond(client, 200, "application/json", "{\"ok\":true}"); }
     } else if (method == "POST" && path == "/api/marriages") {
         person* first = tree.find(jsonLong(body, "firstId"));

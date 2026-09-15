@@ -405,10 +405,10 @@ function render() {
   });
 
   drawConnections();
+  applyWorldTransform();
   if (state.selectedId !== null) {
     placeBranchActions();
   }
-  applyWorldTransform();
 }
 
 function fitToNetwork() {
@@ -453,14 +453,48 @@ function placeBranchActions() {
   const selectedNode = peopleList.querySelector(`.person[data-id="${state.selectedId}"]`);
   if (!selectedNode) return;
 
-  const left = selectedNode.offsetLeft + selectedNode.offsetWidth / 2;
-  const top = selectedNode.offsetTop + selectedNode.offsetHeight / 2;
-  branchActions.style.left = `${left}px`;
-  branchActions.style.top = `${top + 44}px`;
+  // Match the selected circle's world size; the canvas supplies zoom scaling.
+  const actionScale = selectedNode.offsetWidth / 132;
+  branchActions.style.fontSize = `${20 * actionScale}px`;
+  const canvasRect = treeCanvas.getBoundingClientRect();
+  const selectedRect = selectedNode.getBoundingClientRect();
+  const gap = 16 * actionScale * state.zoom;
+  const centerX = (selectedRect.left + selectedRect.right) / 2;
+  // Include the labels below both the people and the action buttons.
+  const obstacles = [...peopleList.querySelectorAll('.person')].map((node) => {
+    const rectangles = [node, ...node.querySelectorAll('.planet-name, .planet-year')]
+      .map((element) => element.getBoundingClientRect());
+    return {
+      node,
+      left: Math.min(...rectangles.map((rect) => rect.left)),
+      right: Math.max(...rectangles.map((rect) => rect.right)),
+      top: Math.min(...rectangles.map((rect) => rect.top)),
+      bottom: Math.max(...rectangles.map((rect) => rect.bottom))
+    };
+  });
+  const width = (branchActions.offsetWidth + 24 * actionScale) * state.zoom;
+  const height = (branchActions.offsetHeight + 28 * actionScale) * state.zoom;
+  let top = obstacles.find((obstacle) => obstacle.node === selectedNode).bottom + gap;
+
+  // Move below any neighboring circle or label that occupies the toolbar space.
+  obstacles.sort((a, b) => a.top - b.top).forEach((obstacle) => {
+    if (centerX + width / 2 + gap > obstacle.left
+        && centerX - width / 2 - gap < obstacle.right
+        && top + height + gap > obstacle.top
+        && top < obstacle.bottom + gap) {
+      top = obstacle.bottom + gap;
+    }
+  });
+  branchActions.style.left = `${(centerX - canvasRect.left) / state.zoom}px`;
+  branchActions.style.top = `${(top - canvasRect.top) / state.zoom}px`;
 }
 
 function openCreate(relation = '', role = '', relatedId = state.selectedId) {
   createForm.reset();
+  if (relation === 'parent') {
+    if (role === 'father') createForm.elements.gender.value = 'male';
+    if (role === 'mother') createForm.elements.gender.value = 'female';
+  }
   showFormError(createForm, '');
   createForm.elements.relation.value = relation;
   createForm.elements.relatedId.value = relatedId ?? '';
@@ -561,6 +595,15 @@ editForm.addEventListener('submit', async (event) => {
   showFormError(editForm, '');
   try {
     const person = state.people.find((entry) => entry.id === state.selectedId);
+    const birthday = event.target.birthday.value;
+    const parents = [editFather.value, editMother.value]
+      .filter((id) => id !== '')
+      .map((id) => state.people.find((entry) => entry.id === Number(id)));
+    const children = state.people.filter((entry) => person.children.includes(entry.id));
+    if (birthday && (parents.some((parent) => parent?.birthday && inputDate(parent.birthday) > birthday)
+        || children.some((child) => child.birthday && birthday > inputDate(child.birthday)))) {
+      throw new Error('A father or mother cannot be younger than their child. Please correct the birthdate.');
+    }
     await request('/api/people', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
