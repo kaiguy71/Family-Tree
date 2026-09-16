@@ -18,8 +18,11 @@ const editMother = document.querySelector('#editMother');
 const editSpouse = document.querySelector('#editSpouse');
 const editGender = document.querySelector('#editGender');
 const savedTree = document.querySelector('#savedTree');
+const loadPeople = document.querySelector('#loadPeople');
 const saveName = document.querySelector('#saveName');
 const deletePerson = document.querySelector('#deletePerson');
+const BASE_PLANET_RADIUS = 22;
+const GENERATION_SCALE = 1.8;
 
 const state = {
   people: [],
@@ -68,7 +71,7 @@ function visibleNameIds(orderedPeople, generationMemo) {
       const [firstLine, lastLine = ''] = personNameLines(person.name);
       const year = yearOf(person);
       const width = Math.min(
-        22 * (3 ** generation) * 1.6,
+        BASE_PLANET_RADIUS * (GENERATION_SCALE ** generation) * 1.6,
         Math.max(firstLine.length, lastLine.length, year ? String(year).length * 0.85 : 0) * 7.2 + 8
       );
       const nameHeight = lastLine ? 28 : 16;
@@ -152,6 +155,34 @@ function getGeneration(personId, memo = new Map(), visiting = new Set()) {
   const generation = childGenerations.length ? Math.max(...childGenerations) + 1 : 0;
   memo.set(personId, generation);
   return generation;
+}
+
+function normalizeSpouseGenerations(memo) {
+  const peopleById = new Map(state.people.map((person) => [person.id, person]));
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    state.people.forEach((person) => {
+      const personGeneration = memo.get(person.id) || 0;
+      person.spouses.forEach((spouseId) => {
+        const spouse = peopleById.get(spouseId);
+        if (!spouse) return;
+
+        const personYear = yearOf(person);
+        const spouseYear = yearOf(spouse);
+        const ageGap = personYear && spouseYear ? Math.abs(personYear - spouseYear) : 0;
+        if (ageGap > 23) return;
+
+        const sharedGeneration = Math.max(personGeneration, memo.get(spouse.id) || 0);
+        if (memo.get(person.id) !== sharedGeneration || memo.get(spouse.id) !== sharedGeneration) {
+          memo.set(person.id, sharedGeneration);
+          memo.set(spouse.id, sharedGeneration);
+          changed = true;
+        }
+      });
+    });
+  }
 }
 
 function adjacentPeople(personId) {
@@ -388,6 +419,8 @@ function render() {
   const neighbors = state.hoveredPersonId === null ? new Set() : adjacentPeople(state.hoveredPersonId);
 
   const orderedPeople = [...state.people].sort((a, b) => a.name.localeCompare(b.name));
+  orderedPeople.forEach((person) => getGeneration(person.id, generationMemo));
+  normalizeSpouseGenerations(generationMemo);
   const visibleNames = visibleNameIds(orderedPeople, generationMemo);
   orderedPeople.forEach((person) => {
     const position = state.positions.get(person.id);
@@ -402,7 +435,7 @@ function render() {
     node.dataset.id = String(person.id);
     node.style.left = `${position.x}px`;
     node.style.top = `${position.y}px`;
-    const radius = 22 * (3 ** generation);
+    const radius = BASE_PLANET_RADIUS * (GENERATION_SCALE ** generation);
     node.style.width = `${radius * 2}px`;
     node.style.height = `${radius * 2}px`;
 
@@ -815,15 +848,17 @@ function stepPhysics() {
 
   const nodes = new Map();
   const generationMemo = new Map();
+  state.people.forEach((person) => getGeneration(person.id, generationMemo));
+  normalizeSpouseGenerations(generationMemo);
   state.positions.forEach((value, key) => {
     const person = state.people.find((entry) => entry.id === key);
-    const generation = person ? getGeneration(key, generationMemo) : 0;
+    const generation = person ? generationMemo.get(key) || 0 : 0;
     nodes.set(key, {
       ...value,
       vx: value.vx || 0,
       vy: value.vy || 0,
       generation,
-      radius: 22 * (3 ** generation)
+      radius: BASE_PLANET_RADIUS * (GENERATION_SCALE ** generation)
     });
   });
 
@@ -891,12 +926,12 @@ function stepPhysics() {
       if (sameBodySize) {
         // Grandparent bodies are the spacing baseline. Scale the separation
         // up for larger bodies and down for smaller bodies by their radius.
-        const grandparentRadius = 22 * (3 ** 2);
+        const grandparentRadius = BASE_PLANET_RADIUS * (GENERATION_SCALE ** 2);
         const averageRadius = (firstNode.radius + secondNode.radius) / 2;
         const relativeSize = Math.max(0.25, averageRadius / grandparentRadius);
         const separationRange = forcefieldGap + (260 * 1.4) * relativeSize;
         if (distance < separationRange) {
-          const repel = (separationRange - distance) * (0.08 * relativeSize);
+          const repel = (separationRange - distance) * (0.048 * relativeSize);
           const fx = (dx / distance) * repel;
           const fy = (dy / distance) * repel;
           firstNode.vx -= fx;
@@ -1054,29 +1089,60 @@ async function loadSavedTree() {
   const [files, current] = await Promise.all([request('/api/savefiles'), request('/api/people')]);
   // Only offer a startup load on an empty map, so refreshing the page never replaces live data.
   if (!files.length || current.length) return;
-  savedTree.innerHTML = files.map((file) => `<option value="${escapeHtml(file)}">${escapeHtml(file)}</option>`).join('');
+  savedTree.innerHTML = files.map((file, index) => `<button type="button" class="save-option${index === 0 ? ' selected' : ''}" data-save="${escapeHtml(file)}">${escapeHtml(file)}</button>`).join('');
+  loadForm.elements.treename.value = files[0];
   loadDialog.showModal();
 }
+
+savedTree.addEventListener('click', (event) => {
+  const option = event.target.closest('.save-option');
+  if (!option) return;
+  savedTree.querySelectorAll('.save-option').forEach((item) => item.classList.remove('selected'));
+  option.classList.add('selected');
+  loadForm.elements.treename.value = option.dataset.save;
+});
 
 loadForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   showFormError(loadForm, '');
   try {
+    const treename = loadForm.elements.treename.value;
     const current = await request('/api/people');
-    if (current.length && !confirm(`Loading ${savedTree.value} replaces the ${current.length} ${current.length === 1 ? 'person' : 'people'} currently on the map. Continue?`)) return;
-    await request('/api/load', {
+    if (current.length && !confirm(`Loading ${treename} replaces the ${current.length} ${current.length === 1 ? 'person' : 'people'} currently on the map. Continue?`)) return;
+    const loaded = await request('/api/load', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ treename: savedTree.value })
+      body: JSON.stringify({ treename })
     });
     loadDialog.close();
     await refresh();
+    if (Array.isArray(loaded.positions) && loaded.positions.length) {
+      loaded.positions.forEach(({ id, x, y }) => {
+        const position = state.positions.get(id);
+        if (position) Object.assign(position, { x, y, vx: 0, vy: 0 });
+      });
+      render();
+    }
   } catch (error) {
     showFormError(loadForm, error.message);
   }
 });
 
 document.querySelector('#skipLoad').addEventListener('click', () => loadDialog.close());
+
+loadPeople.addEventListener('click', async () => {
+  if (state.people.length && !confirm('Clear the current map and choose a saved tree?')) return;
+  try {
+    await request('/api/people', { method: 'DELETE' });
+    state.positions.clear();
+    state.selectedId = null;
+    clearSelection();
+    await refresh();
+    loadSavedTree().catch((error) => { document.querySelector('#statusText').textContent = error.message; });
+  } catch (error) {
+    document.querySelector('#statusText').textContent = error.message;
+  }
+});
 
 loadSavedTree().then(refresh).catch((error) => {
   document.querySelector('#statusText').textContent = error.message;
@@ -1096,7 +1162,12 @@ saveForm.addEventListener('submit', async (event) => {
     await request('/api/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ treename: saveName.value.trim() })
+      body: JSON.stringify({
+        treename: saveName.value.trim(),
+        layout: [...state.positions.entries()]
+          .map(([id, position]) => `${id},${position.x},${position.y}`)
+          .join(';')
+      })
     });
     saveDialog.close();
     document.querySelector('#statusText').textContent = `Saved ${saveName.value.trim()}.save`;

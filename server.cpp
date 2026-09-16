@@ -1,4 +1,5 @@
 #include "server.h"
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -170,6 +171,31 @@ std::string saveFilesJson() {
     return output.str();
 }
 
+std::string saveFilePath(const std::string& treename) {
+    return treename.size() >= 5 && treename.substr(treename.size() - 5) == ".save"
+        ? treename : treename + ".save";
+}
+
+std::string savedLayoutJson(const std::string& treename) {
+    std::ifstream input(saveFilePath(treename));
+    std::ostringstream output;
+    output << "[";
+    std::string line;
+    bool first = true;
+    while (std::getline(input, line)) {
+        if (line.rfind("P ", 0) != 0) continue;
+        std::istringstream fields(line.substr(2));
+        long id;
+        double x, y;
+        if (!(fields >> id >> x >> y)) continue;
+        if (!first) output << ",";
+        first = false;
+        output << "{\"id\":" << id << ",\"x\":" << x << ",\"y\":" << y << "}";
+    }
+    output << "]";
+    return output.str();
+}
+
 /** @brief Sends an HTTP response and logs failed responses to standard error. */
 void respond(int client, int status, const std::string& type, const std::string& body) {
     if (status >= 400) {
@@ -203,12 +229,25 @@ void handleRequest(int client, FamilyTree& tree) {
         respond(client, 200, "application/json", saveFilesJson());
     } else if (method == "POST" && path == "/api/save") {
         const std::string treename = jsonString(body, "treename");
+        const std::string layout = jsonString(body, "layout");
         if (treename.empty() || !tree.save(treename)) respond(client, 400, "application/json", "{\"error\":\"Could not save family tree\"}");
-        else respond(client, 200, "application/json", "{\"ok\":true}");
+        else {
+            std::ofstream output(saveFilePath(treename), std::ios::app);
+            if (!output) respond(client, 400, "application/json", "{\"error\":\"Could not save family layout\"}");
+            else {
+                std::istringstream entries(layout);
+                std::string entry;
+                while (std::getline(entries, entry, ';')) {
+                    std::replace(entry.begin(), entry.end(), ',', ' ');
+                    if (!entry.empty()) output << "P " << entry << '\n';
+                }
+                respond(client, 200, "application/json", "{\"ok\":true}");
+            }
+        }
     } else if (method == "POST" && path == "/api/load") {
         const std::string treename = jsonString(body, "treename");
         if (treename.empty() || !tree.load(treename)) respond(client, 400, "application/json", "{\"error\":\"Could not load family tree\"}");
-        else respond(client, 200, "application/json", "{\"ok\":true}");
+        else respond(client, 200, "application/json", "{\"ok\":true,\"positions\":" + savedLayoutJson(treename) + "}");
     } else if (method == "DELETE" && path.rfind("/api/people?", 0) == 0) {
         const long id = parseLong(queryValue(path.substr(path.find('?') + 1), "id"));
         if (!tree.remove(id)) respond(client, 404, "application/json", "{\"error\":\"Person not found\"}");

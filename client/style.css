@@ -483,6 +483,29 @@ button.save span {
   gap: 12px;
 }
 
+.save-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.save-option {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(12, 23, 34, 0.9);
+  color: var(--ink);
+  padding: 13px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.save-option.selected {
+  border-color: var(--parent);
+  background: rgba(136, 240, 209, 0.12);
+}
+
 .ghost-add {
   border: 1px solid var(--line);
   background: rgba(12, 22, 31, 0.8);

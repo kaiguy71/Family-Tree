@@ -70,6 +70,7 @@ bool FamilyTree::load(const std::string& treename) {
     std::string line;
     while (std::getline(input, line)) {
         if (line.empty()) continue;
+        if (line.rfind("P ", 0) == 0) continue;
         std::istringstream fields(line);
         std::size_t spouseCount = 0;
         if (fields >> record.id >> std::quoted(record.name) >> std::quoted(record.birthday)
