@@ -912,6 +912,8 @@ function stepPhysics() {
       const pair = pairId(firstPerson.id, secondPerson.id);
       const isLinked = linked.has(pair);
       const sameBodySize = firstNode.generation === secondNode.generation;
+      const isMaritalConnection = firstPerson.spouses.includes(secondPerson.id)
+        || secondPerson.spouses.includes(firstPerson.id);
 
       // A barely perceptible expansion gives disconnected clusters enough
       // motion to settle without competing with family forces.
@@ -931,7 +933,8 @@ function stepPhysics() {
         const relativeSize = Math.max(0.25, averageRadius / grandparentRadius);
         const separationRange = forcefieldGap + (260 * 1.4) * relativeSize;
         if (distance < separationRange) {
-          const repel = (separationRange - distance) * (0.048 * relativeSize);
+          const sameSizeRepulsion = isMaritalConnection ? 0.048 * 0.3 : 0.048;
+          const repel = (separationRange - distance) * (sameSizeRepulsion * relativeSize);
           const fx = (dx / distance) * repel;
           const fy = (dy / distance) * repel;
           firstNode.vx -= fx;
