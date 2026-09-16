@@ -31,5 +31,7 @@ Use the add button below the graph to create a disconnected person.
 FamilyTree provides plaintext persistence through <code>save("treename")</code> and <code>load("treename")</code>, which use
 <code>treename.save</code>. Changes are otherwise held in memory until the server stops.</p>
 
+As of commit #5e9e111 , Saves now include relative position vectors, which means loading existing files is much more visually stable than before.
+
 ___
 [*Email*](kb877325@ohio.edu)
