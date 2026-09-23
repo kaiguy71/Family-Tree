@@ -8,8 +8,8 @@ _____
 
 
 Compile with command : <code>make clean && make</code>
-Run with command : <code>./family_tree.prog --server [optional: port, default is 8080]</code>
-Example : <code>./family_tree.prog --server 12345</code> to start a webserver on port 12345.</p>
+Run with command : <code>./family_tree.prog [optional: port, default is 8080]</code>
+Example : <code>./family_tree.prog 12345</code> to start a webserver on port 12345.</p>
 
 
 <p>To use the local browser interface, run the server and open

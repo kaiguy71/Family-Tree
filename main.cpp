@@ -27,14 +27,12 @@ using namespace std;
 int main(int argc, char* argv[]) {
     FamilyTree tree;
 
-    if (argc > 1 && std::string(argv[1]) == "--server") {
-        try {
-            const int port = argc > 2 ? std::stoi(argv[2]) : 8080;
-            return runServer(tree, port);
-        } catch (const std::exception& error) {
-            std::cerr << "[fatal] server startup failed: " << error.what() << '\n';
-            return 1;
-        }
+    try {
+        const int port = argc > 1 ? std::stoi(argv[1]) : 8080;
+        return runServer(tree, port);
+    } catch (const std::exception& error) {
+        std::cerr << "[fatal] server startup failed: " << error.what() << '\n';
+        return 1;
     }
 
     for (const auto& p : tree.people()) {
