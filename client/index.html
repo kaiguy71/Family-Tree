@@ -36,7 +36,7 @@
       </div>
     </header>
     <section class="map-shell">
-      <div class="map-tools"><span id="count">0 people</span><span class="map-actions"><span>scroll to zoom</span><button id="savePeople" type="button">Save map</button><button id="loadPeople" type="button">Load map</button><button id="clearPeople" type="button">Clear map</button></span></div>
+      <div class="map-tools"><span id="count">0 people</span><form id="personSearch" class="person-search" role="search" autocomplete="off"><label for="personSearchInput">Search people</label><div class="search-control"><input id="personSearchInput" type="search" placeholder="Find a person" aria-label="Search people" aria-controls="personSearchResults" aria-expanded="false"><div id="personSearchResults" class="search-results" role="listbox" hidden></div></div></form><span class="map-actions"><span>scroll to zoom</span><button id="savePeople" type="button">Save map</button><button id="loadPeople" type="button">Load map</button><button id="clearPeople" type="button">Clear map</button></span></div>
       <div class="tree-scroll"><div id="treeCanvas" class="tree-canvas"><svg id="connections" aria-hidden="true"></svg><div id="yearBands"></div><div id="peopleList"></div><div id="emptyAdd" class="empty-add"><button id="addFirst" aria-label="Add first person"><span>+</span></button><p>Add first person</p></div><div id="branchActions" class="branch-actions" hidden></div></div></div><button id="addDisconnected" class="ghost-add" type="button" hidden><span>+</span> Add disconnected person</button>
     </section>
     <footer><span>CS3560 Family Tree Project</span><span>Kai B. | Joey R. | Ethan C. | Abram E. | Chayse C.</span></footer>

@@ -21,6 +21,9 @@ const savedTree = document.querySelector('#savedTree');
 const loadPeople = document.querySelector('#loadPeople');
 const saveName = document.querySelector('#saveName');
 const deletePerson = document.querySelector('#deletePerson');
+const personSearch = document.querySelector('#personSearch');
+const personSearchInput = document.querySelector('#personSearchInput');
+const personSearchResults = document.querySelector('#personSearchResults');
 const BASE_PLANET_RADIUS = 22;
 const GENERATION_SCALE = 1.8;
 
@@ -104,6 +107,67 @@ function visibleNameIds(orderedPeople, generationMemo) {
 
 function personName(id) {
   return state.people.find((person) => person.id === id)?.name || 'Unknown';
+}
+
+function searchMatches(query) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (!normalizedQuery) return [];
+  return state.people
+    .filter((person) => person.name.toLocaleLowerCase().includes(normalizedQuery))
+    .sort((first, second) => first.name.localeCompare(second.name));
+}
+
+function closeSearchResults() {
+  personSearchResults.hidden = true;
+  personSearchResults.innerHTML = '';
+  personSearchInput.setAttribute('aria-expanded', 'false');
+  personSearchInput.removeAttribute('aria-activedescendant');
+}
+
+function renderSearchResults() {
+  const query = personSearchInput.value;
+  if (!query.trim()) {
+    closeSearchResults();
+    return;
+  }
+
+  const matches = searchMatches(query);
+  personSearchResults.innerHTML = matches.length
+    ? matches.map((person, index) => `<button type="button" id="person-search-result-${person.id}" role="option" data-person-id="${person.id}"${index === 0 ? ' class="active" aria-selected="true"' : ''}>${escapeHtml(person.name)}</button>`).join('')
+    : '<p class="search-empty">No people found</p>';
+  personSearchResults.hidden = false;
+  personSearchInput.setAttribute('aria-expanded', 'true');
+  const firstResult = personSearchResults.querySelector('[role="option"]');
+  if (firstResult) personSearchInput.setAttribute('aria-activedescendant', firstResult.id);
+  else personSearchInput.removeAttribute('aria-activedescendant');
+}
+
+function focusPerson(id) {
+  const position = state.positions.get(id);
+  if (!position) return;
+  const viewportWidth = treeScroll.clientWidth || 1000;
+  const viewportHeight = treeScroll.clientHeight || 700;
+  state.zoom = Math.max(2.5, state.zoom);
+  state.panX = viewportWidth / 2 - position.x * state.zoom;
+  state.panY = viewportHeight / 2 - position.y * state.zoom;
+  selectPerson(id);
+
+  const selectedNode = peopleList.querySelector(`.person[data-id="${id}"]`);
+  if (selectedNode && !branchActions.hidden) {
+    const viewportRect = treeScroll.getBoundingClientRect();
+    const personRect = selectedNode.getBoundingClientRect();
+    const actionsRect = branchActions.getBoundingClientRect();
+    const focusedCenterX = (Math.min(personRect.left, actionsRect.left)
+      + Math.max(personRect.right, actionsRect.right)) / 2;
+    const focusedCenterY = (Math.min(personRect.top, actionsRect.top)
+      + Math.max(personRect.bottom, actionsRect.bottom)) / 2;
+    state.panX += viewportRect.left + viewportRect.width / 2 - focusedCenterX;
+    state.panY += viewportRect.top + viewportRect.height / 2 - focusedCenterY;
+    render();
+  }
+
+  personSearchInput.value = personName(id);
+  closeSearchResults();
 }
 
 function apiDate(value) {
@@ -574,6 +638,49 @@ branchActions.addEventListener('click', (event) => {
 
 document.querySelector('#addFirst').addEventListener('click', () => openCreate());
 addDisconnected.addEventListener('click', () => openCreate('', '', null));
+
+personSearchInput.addEventListener('input', renderSearchResults);
+
+personSearchInput.addEventListener('keydown', (event) => {
+  const results = [...personSearchResults.querySelectorAll('[role="option"]')];
+  if (event.key === 'Escape') {
+    closeSearchResults();
+    return;
+  }
+  if (!results.length || !['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+
+  event.preventDefault();
+  const activeIndex = Math.max(0, results.findIndex((result) => result.classList.contains('active')));
+  if (event.key === 'Enter') {
+    focusPerson(Number(results[activeIndex].dataset.personId));
+    return;
+  }
+
+  const nextIndex = event.key === 'ArrowDown'
+    ? (activeIndex + 1) % results.length
+    : (activeIndex - 1 + results.length) % results.length;
+  results.forEach((result, index) => {
+    result.classList.toggle('active', index === nextIndex);
+    result.setAttribute('aria-selected', index === nextIndex ? 'true' : 'false');
+  });
+  personSearchInput.setAttribute('aria-activedescendant', results[nextIndex].id);
+});
+
+personSearch.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const activeResult = personSearchResults.querySelector('[role="option"].active');
+  const match = activeResult || personSearchResults.querySelector('[role="option"]');
+  if (match) focusPerson(Number(match.dataset.personId));
+});
+
+personSearchResults.addEventListener('click', (event) => {
+  const result = event.target.closest('[data-person-id]');
+  if (result) focusPerson(Number(result.dataset.personId));
+});
+
+document.addEventListener('pointerdown', (event) => {
+  if (!personSearch.contains(event.target)) closeSearchResults();
+});
 
 function clearSelection() {
   state.selectedId = null;
