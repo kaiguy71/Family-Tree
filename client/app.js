@@ -26,6 +26,16 @@ const personSearchInput = document.querySelector('#personSearchInput');
 const personSearchResults = document.querySelector('#personSearchResults');
 const BASE_PLANET_RADIUS = 22;
 const GENERATION_SCALE = 1.8;
+const MAX_NODE_SPEED = 60;
+const MAX_COLLISION_STEP = 120;
+const MAX_COLLISION_IMPULSE = 18;
+const MAX_SIZE_SCALE = 2;
+const SIZE_SCALE_RATE = 0.12;
+
+function sizeScale(radius) {
+  const radiusRatio = Math.max(1, radius / BASE_PLANET_RADIUS);
+  return Math.min(MAX_SIZE_SCALE, 1 + Math.log2(radiusRatio) * SIZE_SCALE_RATE);
+}
 
 const state = {
   people: [],
@@ -37,8 +47,18 @@ const state = {
   dragNodeId: null,
   viewportDrag: null,
   animationFrame: null,
+  animationTick: 0,
   hoveredPersonId: null,
-  press: null
+  press: null,
+  personById: new Map(),
+  orderedPeople: [],
+  generationMemo: new Map(),
+  connectedComponents: null,
+  componentByPerson: new Map(),
+  linked: new Set(),
+  sharedChildConnections: new Set(),
+  marriagePairs: new Set(),
+  relationshipLinks: []
 };
 
 function request(url, options) {
@@ -66,6 +86,7 @@ function personNameLines(name) {
 }
 
 function visibleNameIds(orderedPeople, generationMemo) {
+  const maxGeneration = Math.max(...orderedPeople.map((person) => generationMemo.get(person.id) || 0));
   const candidates = orderedPeople
     .map((person) => {
       const position = state.positions.get(person.id);
@@ -87,7 +108,7 @@ function visibleNameIds(orderedPeople, generationMemo) {
       };
     })
     .filter(Boolean)
-    .filter((candidate) => candidate.generation === Math.max(...orderedPeople.map((person) => getGeneration(person.id, generationMemo)))
+    .filter((candidate) => candidate.generation === maxGeneration
       || state.zoom >= 0.55 + candidate.generation * 0.12)
     .sort((first, second) => second.generation - first.generation);
 
@@ -210,7 +231,7 @@ function relationshipCount(person) {
 function getGeneration(personId, memo = new Map(), visiting = new Set()) {
   if (memo.has(personId)) return memo.get(personId);
   if (visiting.has(personId)) return 0;
-  const person = state.people.find((entry) => entry.id === personId);
+  const person = state.personById.get(personId);
   if (!person) return 0;
   visiting.add(personId);
   const childGenerations = person.children
@@ -286,7 +307,8 @@ function populateRelationshipFields(person) {
 }
 
 function getConnectedComponents() {
-  const personMap = new Map(state.people.map((person) => [person.id, person]));
+  if (state.connectedComponents) return state.connectedComponents;
+  const personMap = state.personById;
   const remaining = new Set(personMap.keys());
   const components = [];
 
@@ -323,12 +345,13 @@ function getConnectedComponents() {
     components.push(component);
   }
 
+  state.connectedComponents = components;
   return components;
 }
 
 function chooseRoot(component) {
   const candidates = component
-    .map((id) => state.people.find((person) => person.id === id))
+    .map((id) => state.personById.get(id))
     .filter(Boolean);
 
   if (!candidates.length) return null;
@@ -404,6 +427,7 @@ function seedPositions() {
 }
 
 function relationshipLinks() {
+  if (state.relationshipLinks.length) return state.relationshipLinks;
   const links = [];
   state.people.forEach((person) => {
     [person.father, person.mother].filter((value) => value !== null).forEach((parentId) => {
@@ -416,7 +440,54 @@ function relationshipLinks() {
       }
     });
   });
+  state.relationshipLinks = links;
   return links;
+}
+
+function rebuildDerivedData() {
+  state.personById = new Map(state.people.map((person) => [person.id, person]));
+  state.orderedPeople = [...state.people].sort((a, b) => a.name.localeCompare(b.name));
+  state.generationMemo = new Map();
+  state.people.forEach((person) => getGeneration(person.id, state.generationMemo));
+  normalizeSpouseGenerations(state.generationMemo);
+
+  state.connectedComponents = null;
+  state.componentByPerson = new Map();
+  getConnectedComponents().forEach((component) => {
+    component.forEach((personId) => state.componentByPerson.set(personId, component));
+  });
+
+  state.linked = new Set();
+  state.sharedChildConnections = new Set();
+  state.marriagePairs = new Set();
+  const pairId = (firstId, secondId) => firstId < secondId
+    ? `${firstId}:${secondId}`
+    : `${secondId}:${firstId}`;
+  state.people.forEach((person) => {
+    [person.father, person.mother, ...person.children, ...person.spouses]
+      .filter((value) => value !== null && value !== undefined)
+      .forEach((id) => state.linked.add(pairId(person.id, id)));
+    person.spouses.forEach((spouseId) => state.marriagePairs.add(pairId(person.id, spouseId)));
+    const parents = [person.father, person.mother]
+      .filter((id) => id !== null && id !== undefined);
+    if (parents.length === 2) {
+      state.sharedChildConnections.add(pairId(parents[0], parents[1]));
+    }
+  });
+  state.people.forEach((person) => {
+    person.children.forEach((childId) => {
+      const child = state.personById.get(childId);
+      if (!child) return;
+      [child.father, child.mother]
+        .filter((id) => id !== null && id !== undefined)
+        .forEach((parentId) => {
+          if (parentId !== person.id) state.sharedChildConnections.add(pairId(person.id, parentId));
+        });
+    });
+  });
+
+  state.relationshipLinks = [];
+  relationshipLinks();
 }
 
 function drawConnections() {
@@ -479,12 +550,10 @@ function render() {
   addDisconnected.hidden = state.people.length === 0;
 
   peopleList.innerHTML = '';
-  const generationMemo = new Map();
+  const generationMemo = state.generationMemo;
   const neighbors = state.hoveredPersonId === null ? new Set() : adjacentPeople(state.hoveredPersonId);
 
-  const orderedPeople = [...state.people].sort((a, b) => a.name.localeCompare(b.name));
-  orderedPeople.forEach((person) => getGeneration(person.id, generationMemo));
-  normalizeSpouseGenerations(generationMemo);
+  const orderedPeople = state.orderedPeople;
   const visibleNames = visibleNameIds(orderedPeople, generationMemo);
   orderedPeople.forEach((person) => {
     const position = state.positions.get(person.id);
@@ -817,7 +886,8 @@ function setZoom(nextZoom) {
   const viewportHeight = treeScroll.clientHeight || 700;
   const centerWorldX = (viewportWidth / 2 - state.panX) / state.zoom;
   const centerWorldY = (viewportHeight / 2 - state.panY) / state.zoom;
-  state.zoom = Math.max(0.01, Math.min(12, nextZoom));
+  if (!Number.isFinite(nextZoom) || nextZoom <= 0) return;
+  state.zoom = nextZoom;
   state.panX = viewportWidth / 2 - centerWorldX * state.zoom;
   state.panY = viewportHeight / 2 - centerWorldY * state.zoom;
   render();
@@ -954,11 +1024,9 @@ function stepPhysics() {
   if (!state.people.length) return;
 
   const nodes = new Map();
-  const generationMemo = new Map();
-  state.people.forEach((person) => getGeneration(person.id, generationMemo));
-  normalizeSpouseGenerations(generationMemo);
+  const generationMemo = state.generationMemo;
   state.positions.forEach((value, key) => {
-    const person = state.people.find((entry) => entry.id === key);
+    const person = state.personById.get(key);
     const generation = person ? generationMemo.get(key) || 0 : 0;
     nodes.set(key, {
       ...value,
@@ -969,38 +1037,9 @@ function stepPhysics() {
     });
   });
 
-  const linked = new Set();
-  const sharedChildConnections = new Set();
-  const componentByPerson = new Map();
-  const pairId = (firstId, secondId) => [firstId, secondId].sort((a, b) => a - b).join(':');
-
-  getConnectedComponents().forEach((component) => {
-    component.forEach((personId) => componentByPerson.set(personId, component));
-  });
-
-  state.people.forEach((person) => {
-    [person.father, person.mother, ...person.children, ...person.spouses]
-      .filter((value) => value !== null && value !== undefined)
-      .forEach((id) => linked.add(pairId(person.id, id)));
-
-    const parents = [person.father, person.mother]
-      .filter((id) => id !== null && id !== undefined);
-    if (parents.length === 2) {
-      sharedChildConnections.add(pairId(parents[0], parents[1]));
-    }
-  });
-
-  state.people.forEach((person) => {
-    person.children.forEach((childId) => {
-      const child = state.people.find((candidate) => candidate.id === childId);
-      if (!child) return;
-      [child.father, child.mother]
-        .filter((id) => id !== null && id !== undefined)
-        .forEach((parentId) => {
-          if (parentId !== person.id) sharedChildConnections.add(pairId(person.id, parentId));
-        });
-    });
-  });
+  const pairId = (firstId, secondId) => firstId < secondId
+    ? `${firstId}:${secondId}`
+    : `${secondId}:${firstId}`;
 
   for (let index = 0; index < state.people.length; index += 1) {
     const firstPerson = state.people[index];
@@ -1017,10 +1056,9 @@ function stepPhysics() {
       const distance = Math.hypot(dx, dy) || 1;
       const forcefieldGap = 1.1 * (firstNode.radius + secondNode.radius);
       const pair = pairId(firstPerson.id, secondPerson.id);
-      const isLinked = linked.has(pair);
+      const isLinked = state.linked.has(pair);
       const sameBodySize = firstNode.generation === secondNode.generation;
-      const isMaritalConnection = firstPerson.spouses.includes(secondPerson.id)
-        || secondPerson.spouses.includes(firstPerson.id);
+      const isMaritalConnection = state.marriagePairs.has(pair);
 
       // A barely perceptible expansion gives disconnected clusters enough
       // motion to settle without competing with family forces.
@@ -1059,8 +1097,8 @@ function stepPhysics() {
         secondNode.vx -= fx;
         secondNode.vy -= fy;
       } else if (
-        sharedChildConnections.has(pair)
-        || componentByPerson.get(firstPerson.id) !== componentByPerson.get(secondPerson.id)
+        state.sharedChildConnections.has(pair)
+        || state.componentByPerson.get(firstPerson.id) !== state.componentByPerson.get(secondPerson.id)
       ) {
         const separationRange = forcefieldGap + 180;
         if (distance < separationRange) {
@@ -1077,7 +1115,11 @@ function stepPhysics() {
       if (distance < forcefieldGap) {
         // Forcefields prevent clipping while preserving tangential movement,
         // so another planet can roll across the boundary like a floor.
-        const overlap = forcefieldGap - distance;
+        const collisionScale = sizeScale(Math.max(firstNode.radius, secondNode.radius));
+        const overlap = Math.min(
+          forcefieldGap - distance,
+          MAX_COLLISION_STEP * collisionScale
+        );
         const nx = dx === 0 && dy === 0 ? (firstPerson.id < secondPerson.id ? 1 : -1) : dx / distance;
         const ny = dx === 0 && dy === 0 ? 0 : dy / distance;
         const inverseMassTotal = (1 / firstNode.radius) + (1 / secondNode.radius);
@@ -1094,7 +1136,10 @@ function stepPhysics() {
         if (relativeNormalVelocity < 0) {
           // Cancel only the inward normal velocity. This is a zero-restitution
           // collision: tangential velocity remains available for sliding.
-          const impulse = -relativeNormalVelocity;
+          const impulse = Math.min(
+            -relativeNormalVelocity,
+            MAX_COLLISION_IMPULSE * collisionScale
+          );
           firstNode.vx -= nx * impulse * firstShare;
           firstNode.vy -= ny * impulse * firstShare;
           secondNode.vx += nx * impulse * secondShare;
@@ -1128,6 +1173,13 @@ function stepPhysics() {
   nodes.forEach((node) => {
     node.vx -= dampedVelocity.x;
     node.vy -= dampedVelocity.y;
+    const speed = Math.hypot(node.vx, node.vy);
+    const maxSpeed = MAX_NODE_SPEED * sizeScale(node.radius);
+    if (speed > maxSpeed) {
+      const speedScale = maxSpeed / speed;
+      node.vx *= speedScale;
+      node.vy *= speedScale;
+    }
     node.x += node.vx;
     node.y += node.vy;
   });
@@ -1142,13 +1194,15 @@ function animationLoop() {
   }
 
   stepPhysics();
-  render();
+  state.animationTick += 1;
+  if (state.animationTick % 2 === 0) render();
   state.animationFrame = requestAnimationFrame(animationLoop);
 }
 
 async function refresh() {
   const previousPeople = new Map(state.people.map((person) => [person.id, person]));
   state.people = (await request('/api/people')).map(normalizePerson);
+  rebuildDerivedData();
   if (state.selectedId !== null && !state.people.some((person) => person.id === state.selectedId)) clearSelection();
   if (!state.people.length) {
     state.positions.clear();
